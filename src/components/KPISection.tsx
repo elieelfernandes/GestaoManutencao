@@ -54,7 +54,7 @@ export default function KPISection({ records }: KPISectionProps) {
   const topSector = getTopOccurrence(records.map(r => r.setor));
   const topType = getTopOccurrence(records.map(r => r.tipoManutencao));
   const topResponsible = getTopOccurrence(records.map(r => r.responsavel));
-  const topMaintSector = getTopOccurrence(records.map(r => r.setorManutencao));
+  const topMaintSector = getTopOccurrence(records.map(r => r.areaTecnica || r.setorManutencao || 'Outro'));
 
   return (
     <section className="space-y-6">

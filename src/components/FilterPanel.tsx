@@ -62,7 +62,7 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
   const months = React.useMemo(() => {
     const vals = records
       .map(r => r.mesStr)
-      .filter(v => v && v !== 'Outro' && v.trim() !== '');
+      .filter((v): v is string => !!v && v !== 'Outro' && v.trim() !== '');
     return Array.from(new Set(vals)).sort((a, b) => parseMonthYear(a).getTime() - parseMonthYear(b).getTime());
   }, [records]);
 

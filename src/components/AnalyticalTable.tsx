@@ -17,24 +17,29 @@ import {
   Download, 
   Search,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { MaintenanceRecord } from '../types';
+import StatusBadge from './StatusBadge';
 
 interface AnalyticalTableProps {
   records: MaintenanceRecord[];
+  onEditOS?: (record: MaintenanceRecord) => void;
+  onDeleteOS?: (id: string) => void;
 }
 
 const columnHelper = createColumnHelper<MaintenanceRecord>();
 
-export default function AnalyticalTable({ records }: AnalyticalTableProps) {
+export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: AnalyticalTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalSearch, setGlobalSearch] = useState('');
 
   // Define table columns
   const columns = [
-    columnHelper.accessor('dataStr', {
+    columnHelper.accessor('dataSolicitacaoStr', {
       header: 'Data',
       cell: info => <span className="font-medium text-slate-300">{info.getValue() || '—'}</span>
     }),
@@ -80,30 +85,13 @@ export default function AnalyticalTable({ records }: AnalyticalTableProps) {
         );
       }
     }),
-    columnHelper.accessor('setorManutencao', {
+    columnHelper.accessor('areaTecnica', {
       header: 'Área Técnica',
       cell: info => <span className="text-slate-400 text-xs">{info.getValue() || '—'}</span>
     }),
     columnHelper.accessor('status', {
       header: 'Status',
-      cell: info => {
-        const val = info.getValue();
-        let colorClass = 'bg-slate-800 text-slate-400 border-slate-700/50';
-        if (val === 'Concluído') colorClass = 'bg-emerald-950/40 text-emerald-400 border-emerald-800/30';
-        if (val === 'Em andamento') colorClass = 'bg-blue-950/40 text-blue-400 border-blue-800/30';
-        if (val === 'Atrasado') colorClass = 'bg-red-950/40 text-red-400 border-red-800/30 font-bold';
-        
-        return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${colorClass}`}>
-            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-              val === 'Concluído' ? 'bg-emerald-500' :
-              val === 'Em andamento' ? 'bg-blue-500' :
-              val === 'Atrasado' ? 'bg-red-500 animate-pulse' : 'bg-slate-500'
-            }`}></span>
-            {val}
-          </span>
-        );
-      }
+      cell: info => <StatusBadge status={info.getValue()} />
     }),
     columnHelper.accessor('observacao', {
       header: 'Observação',
@@ -112,6 +100,39 @@ export default function AnalyticalTable({ records }: AnalyticalTableProps) {
           {info.getValue() || '—'}
         </div>
       )
+    }),
+    columnHelper.display({
+      id: 'acoes',
+      header: 'Ações',
+      cell: ({ row }) => {
+        const record = row.original;
+        return (
+          <div className="flex items-center gap-1.5">
+            {onEditOS && (
+              <button
+                onClick={() => onEditOS(record)}
+                className="p-1.5 text-blue-400 hover:text-white bg-blue-500/10 hover:bg-blue-600 rounded-lg border border-blue-500/20 transition-all cursor-pointer"
+                title="Editar / Dar Baixa"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onDeleteOS && (
+              <button
+                onClick={() => {
+                  if (confirm(`Tem certeza que deseja excluir a OS "${record.descricao}"?`)) {
+                    onDeleteOS(record.id);
+                  }
+                }}
+                className="p-1.5 text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-600 rounded-lg border border-rose-500/20 transition-all cursor-pointer"
+                title="Excluir Ordem de Serviço"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        );
+      }
     })
   ];
 
@@ -150,7 +171,7 @@ export default function AnalyticalTable({ records }: AnalyticalTableProps) {
     if (filteredData.length === 0) return;
 
     const dataToExport = filteredData.map(r => ({
-      'Data OS': r.dataStr || '—',
+      'Data OS': r.dataSolicitacaoStr || (r as any).dataStr || '—',
       'Hora Solicitação': r.horaSolicitacao || '—',
       'Setor Solicitante': r.setor || '—',
       'Descrição do Serviço': r.descricao || '—',
@@ -161,8 +182,8 @@ export default function AnalyticalTable({ records }: AnalyticalTableProps) {
       'Início': r.horarioInicio || '—',
       'Término': r.horarioTermino || '—',
       'Status': r.status || '—',
-      'Progresso (%)': r.pctStatus !== undefined ? `${(r.pctStatus * 100).toFixed(0)}%` : '—',
-      'Setor da Manutenção (Área)': r.setorManutencao || '—',
+      'Progresso (%)': (r as any).pctStatus !== undefined ? `${((r as any).pctStatus * 100).toFixed(0)}%` : '—',
+      'Setor da Manutenção (Área)': r.areaTecnica || r.setorManutencao || '—',
       'Prazo Execução': r.prazoExecucaoStr || '—',
       'Prazo (Dias)': r.prazo || '—',
       'Observação': r.observacao || '—'
