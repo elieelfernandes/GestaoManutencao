@@ -1,5 +1,4 @@
 import { Pool } from 'pg';
-import { neon } from '@neondatabase/serverless';
 
 // Singleton Pool connection for Supabase & Postgres
 let globalPool: Pool | null = null;
@@ -22,12 +21,6 @@ const sql = async (strings: TemplateStringsArray, ...values: any[]): Promise<any
     return [];
   }
 
-  // If using Neon URL, use Neon driver
-  if (dbUrl.includes('neon.tech')) {
-    const client = neon(dbUrl);
-    return client(strings, ...values);
-  }
-
   // Construct parameterized SQL query ($1, $2, ...) for pg driver
   let text = '';
   for (let i = 0; i < strings.length; i++) {
@@ -41,9 +34,9 @@ const sql = async (strings: TemplateStringsArray, ...values: any[]): Promise<any
     const pool = getPool(dbUrl);
     const result = await pool.query(text, values);
     return result.rows;
-  } catch (err) {
+  } catch (err: any) {
     console.error('Postgres Query Error:', err);
-    throw err;
+    throw new Error(err.message || 'Erro ao conectar ao banco de dados');
   }
 };
 
