@@ -127,12 +127,12 @@ export default function DashboardView() {
     <div className="space-y-8 animate-in fade-in duration-300">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-6">
         <div>
-          <h2 className="text-xl font-extrabold text-white tracking-wide flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-slate-800 dark:text-white tracking-wide flex items-center gap-2">
             <LayoutDashboard className="w-6 h-6 text-blue-500" /> ÁREA 3 — Dashboard Executivo
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Indicadores de desempenho, taxa de atendimento, diagnóstico de gargalos e visão gráfica em tempo real.
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function DashboardView() {
         <button
           onClick={fetchDashboardData}
           disabled={isLoading}
-          className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs py-2.5 px-4 rounded-xl border border-slate-800 transition-all self-start sm:self-auto"
+          className="flex items-center gap-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 transition-all self-start sm:self-auto shadow-sm cursor-pointer"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-400' : ''}`} />
           Atualizar Dados
@@ -149,10 +149,10 @@ export default function DashboardView() {
 
       {/* Error Alert */}
       {errorMsg && (
-        <div className="bg-red-950/40 border border-red-900/60 rounded-2xl p-4 flex items-start gap-3 text-red-300 animate-in fade-in">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3 text-red-800 dark:text-red-300 animate-in fade-in">
+          <AlertCircle className="w-5 h-5 text-red-650 dark:text-red-400 shrink-0 mt-0.5" />
           <div className="text-xs font-semibold leading-relaxed">
-            <strong className="block text-white font-bold mb-0.5">Erro no Dashboard:</strong>
+            <strong className="block text-slate-900 dark:text-white font-bold mb-0.5">Erro no Dashboard:</strong>
             {errorMsg}
           </div>
         </div>
@@ -160,9 +160,9 @@ export default function DashboardView() {
 
       {isLoading ? (
         /* Loading Skeleton */
-        <div className="h-[50vh] w-full flex flex-col items-center justify-center gap-3 bg-slate-900/20 border border-slate-900 rounded-3xl p-8">
+        <div className="h-[50vh] w-full flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-sm">
           <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-          <span className="text-xs text-slate-400 font-semibold">Carregando métricas e gráficos em tempo real...</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Carregando métricas e gráficos em tempo real...</span>
         </div>
       ) : (
         <>
@@ -181,10 +181,10 @@ export default function DashboardView() {
           <DiagnosticPanel records={filteredRecords} />
 
           {/* 4. Interactive Recharts */}
-          <div className="border-t border-slate-900 pt-6">
+          <div className="border-t border-slate-200 dark:border-slate-900 pt-6">
             <div className="mb-6">
-              <h3 className="text-base font-extrabold text-white tracking-wide">Visões Gráficas Operacionais</h3>
-              <p className="text-slate-500 text-xs mt-0.5">Distribuição estatística por setor, tipo, prioridade e técnico</p>
+              <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-wide">Visões Gráficas Operacionais</h3>
+              <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">Distribuição estatística por setor, tipo, prioridade e técnico</p>
             </div>
             <MaintenanceCharts records={filteredRecords} />
           </div>

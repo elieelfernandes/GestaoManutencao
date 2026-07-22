@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FileText, ShieldAlert, TrendingUp, Lightbulb, ClipboardList, CheckCircle2 } from 'lucide-react';
+import { FileText, ShieldAlert, TrendingUp, Lightbulb, ClipboardList } from 'lucide-react';
 import { MaintenanceRecord } from '../types';
 
 interface DiagnosticPanelProps {
@@ -13,7 +13,7 @@ export default function DiagnosticPanel({ records }: DiagnosticPanelProps) {
   
   if (total === 0) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center text-slate-400">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center text-slate-500 shadow-sm">
         Nenhum dado disponível para gerar o diagnóstico. Por favor, carregue uma planilha.
       </div>
     );
@@ -27,7 +27,7 @@ export default function DiagnosticPanel({ records }: DiagnosticPanelProps) {
   const openRate = (open / total) * 100;
   const delayedRate = (delayed / total) * 100;
 
-  // Caculate maintenance type volumes
+  // Calculate maintenance type volumes
   const corrective = records.filter(r => r.tipoManutencao === 'Corretiva').length;
   const preventive = records.filter(r => r.tipoManutencao === 'Preventiva').length;
   const melhoria = records.filter(r => r.tipoManutencao === 'Melhoria').length;
@@ -100,44 +100,44 @@ export default function DiagnosticPanel({ records }: DiagnosticPanelProps) {
   }
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm relative overflow-hidden group">
       
       {/* Visual Accent */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -z-10 group-hover:bg-blue-500/10 transition-colors duration-500"></div>
       
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-4 mb-6">
-        <div className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl">
+      <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-850 pb-4 mb-6">
+        <div className="p-2.5 bg-slate-50 dark:bg-blue-500/10 text-slate-650 dark:text-blue-400 rounded-xl border border-slate-100 dark:border-blue-500/10">
           <FileText className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white tracking-wide">Diagnóstico Executivo da Manutenção</h2>
-          <p className="text-slate-400 text-xs mt-0.5">Análise e recomendações gerenciais geradas dinamicamente</p>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-wide">Diagnóstico Executivo da Manutenção</h2>
+          <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">Análise e recomendações gerenciais geradas dinamicamente</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Left Column: Data Interpretation */}
-        <div className="space-y-5 text-sm leading-relaxed text-slate-300">
+        <div className="space-y-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
           
           {/* Subsection: Overview */}
           <div>
-            <div className="flex items-center gap-2 text-xs uppercase font-bold text-blue-400 tracking-wider mb-2">
+            <div className="flex items-center gap-2 text-xs uppercase font-bold text-blue-600 dark:text-blue-400 tracking-wider mb-2">
               <TrendingUp className="w-3.5 h-3.5" />
               Visão Geral de Desempenho
             </div>
             <p>
-              Com base no processamento de <strong className="text-white">{total} ordens de serviço</strong>, a operação de manutenção registra uma <strong className="text-emerald-400">taxa de conclusão de {completionRate.toFixed(1)}%</strong> ({completed} atendimentos encerrados). 
-              O volume acumulado de solicitações em aberto (não iniciadas ou em andamento) é de <strong className="text-blue-400">{open} chamados</strong> ({openRate.toFixed(1)}% da demanda total), 
-              com um total de <strong className={`${delayed > 0 ? 'text-red-400 font-bold' : 'text-slate-300'}`}>{delayed} ordens em atraso</strong> ({delayedRate.toFixed(1)}%).
+              Com base no processamento de <strong className="text-slate-800 dark:text-white">{total} ordens de serviço</strong>, a operação de manutenção registra uma <strong className="text-emerald-600 dark:text-emerald-400">taxa de conclusão de {completionRate.toFixed(1)}%</strong> ({completed} atendimentos encerrados). 
+              O volume acumulado de solicitações em aberto (não iniciadas ou em andamento) é de <strong className="text-blue-600 dark:text-blue-400">{open} chamados</strong> ({openRate.toFixed(1)}% da demanda total), 
+              com um total de <strong className={`${delayed > 0 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>{delayed} ordens em atraso</strong> ({delayedRate.toFixed(1)}%).
             </p>
           </div>
 
           {/* Subsection: Critical Sectors */}
           {criticalSectors.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 text-xs uppercase font-bold text-red-400 tracking-wider mb-2">
+              <div className="flex items-center gap-2 text-xs uppercase font-bold text-red-600 dark:text-red-400 tracking-wider mb-2">
                 <ShieldAlert className="w-3.5 h-3.5" />
                 Setores Críticos Identificados
               </div>
@@ -147,11 +147,11 @@ export default function DiagnosticPanel({ records }: DiagnosticPanelProps) {
               <ul className="space-y-1.5 pl-1">
                 {criticalSectors.map((s, idx) => (
                   <li key={s.name} className="flex items-center gap-2 text-xs">
-                    <span className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center font-bold text-slate-400 text-[10px]">
+                    <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-500 dark:text-slate-400 text-[10px] border border-slate-200 dark:border-slate-700">
                       {idx + 1}
                     </span>
-                    <span className="font-semibold text-white min-w-[120px]">{s.name}</span>
-                    <span className="text-slate-400">
+                    <span className="font-semibold text-slate-800 dark:text-white min-w-[120px]">{s.name}</span>
+                    <span className="text-slate-500 dark:text-slate-400">
                       ({s.pending} pendentes {s.delayed > 0 ? `, ${s.delayed} atrasados` : ''} de {s.total} totais)
                     </span>
                   </li>
@@ -162,32 +162,32 @@ export default function DiagnosticPanel({ records }: DiagnosticPanelProps) {
 
           {/* Subsection: Recurrent Maintenance Types */}
           <div>
-            <div className="flex items-center gap-2 text-xs uppercase font-bold text-purple-400 tracking-wider mb-2">
+            <div className="flex items-center gap-2 text-xs uppercase font-bold text-purple-600 dark:text-purple-400 tracking-wider mb-2">
               <ClipboardList className="w-3.5 h-3.5" />
               Perfil das Intervenções
             </div>
             <p>
               O perfil das atividades de manutenção demonstra uma distribuição com foco em{' '}
-              <strong className="text-purple-300">manutenção Corretiva ({correctiveRate.toFixed(1)}%)</strong>,{' '}
-              <strong className="text-emerald-300">Preventiva ({preventiveRate.toFixed(1)}%)</strong> e{' '}
-              <strong className="text-amber-300">Melhoria ({melhoriaRate.toFixed(1)}%)</strong>. A proporção entre preventivas e corretivas é um dos principais indicadores de maturidade da gestão de ativos, sugerindo a necessidade de balanceamento contínuo das rotinas preventivas.
+              <strong className="text-purple-700 dark:text-purple-300">manutenção Corretiva ({correctiveRate.toFixed(1)}%)</strong>,{' '}
+              <strong className="text-emerald-700 dark:text-emerald-300">Preventiva ({preventiveRate.toFixed(1)}%)</strong> e{' '}
+              <strong className="text-amber-700 dark:text-amber-300">Melhoria ({melhoriaRate.toFixed(1)}%)</strong>. A proporção entre preventivas e corretivas é um dos principais indicadores de maturidade da gestão de ativos, sugerindo a necessidade de balanceamento contínuo das rotinas preventivas.
             </p>
           </div>
 
         </div>
-
+ 
         {/* Right Column: Recommendations */}
-        <div className="bg-slate-950/40 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 rounded-xl p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs uppercase font-bold text-indigo-400 tracking-wider mb-4">
-              <Lightbulb className="w-4 h-4 text-indigo-400" />
+            <div className="flex items-center gap-2 text-xs uppercase font-bold text-indigo-650 dark:text-indigo-400 tracking-wider mb-4">
+              <Lightbulb className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               Recomendações Gerenciais
             </div>
             
             <div className="space-y-4">
               {recommendations.map((rec, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-xs leading-relaxed text-slate-300">
-                  <span className="mt-0.5 inline-flex items-center justify-center shrink-0 w-5 h-5 rounded-lg bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/20">
+                <div key={idx} className="flex items-start gap-3 text-xs leading-relaxed text-slate-600 dark:text-slate-350">
+                  <span className="mt-0.5 inline-flex items-center justify-center shrink-0 w-5 h-5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold border border-indigo-100 dark:border-indigo-500/20">
                     {idx + 1}
                   </span>
                   <p>{rec}</p>
@@ -197,7 +197,7 @@ export default function DiagnosticPanel({ records }: DiagnosticPanelProps) {
           </div>
 
           {/* Diagnostic Footer */}
-          <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+          <div className="mt-6 pt-4 border-t border-slate-150 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-medium">
             <span>Status da Operação: {completionRate >= 80 ? 'ESTÁVEL' : 'ATENÇÃO'}</span>
             <span>Meta de Atendimento: 85.0%</span>
           </div>
