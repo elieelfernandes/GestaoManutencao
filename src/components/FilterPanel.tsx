@@ -21,7 +21,25 @@ interface FilterPanelProps {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   lookups: MasterLookupData;
-  records: MaintenanceRecord[]; // Used to gather dynamic values if lookups are empty
+  records: MaintenanceRecord[];
+}
+
+export const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
+export function getMonthStr(dateStr?: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length >= 2) {
+    const year = parts[0];
+    const monthIdx = parseInt(parts[1], 10) - 1;
+    if (monthIdx >= 0 && monthIdx < 12) {
+      return `${MONTH_NAMES[monthIdx]} ${year}`;
+    }
+  }
+  return '';
 }
 
 export default function FilterPanel({ filters, setFilters, lookups, records }: FilterPanelProps) {
@@ -40,30 +58,28 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
   const responsibles = lookups.responsibles.length > 0 ? lookups.responsibles : getUniqueValues('responsavel');
   const priorities = ['Alta', 'Média', 'Baixa'];
   const statuses = ['Concluído', 'Em andamento', 'Não iniciado', 'Atrasado'];
-  const maintSectors = lookups.maintenanceSectors.length > 0 ? lookups.maintenanceSectors : getUniqueValues('setorManutencao');
+  const maintSectors = lookups.maintenanceSectors.length > 0 ? lookups.maintenanceSectors : getUniqueValues('areaTecnica');
   
   // Gather dynamic maintenance types from records
-  const types = getUniqueValues('tipoManutencao');
+  const types = lookups.types.length > 0 ? lookups.types : getUniqueValues('tipoManutencao');
 
-  // Month parsing and sorting
-  const parseMonthYear = (str: string) => {
-    const parts = str.split('/');
-    if (parts.length === 2) {
-      const monthsList = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      const m = monthsList.indexOf(parts[0]);
-      const y = parseInt(parts[1], 10);
-      if (m !== -1 && !isNaN(y)) {
-        return new Date(y, m, 1);
-      }
-    }
-    return new Date(0);
-  };
-
+  // Dynamically extract and format available months from records (e.g., "Janeiro 2026", "Fevereiro 2026")
   const months = React.useMemo(() => {
     const vals = records
-      .map(r => r.mesStr)
-      .filter((v): v is string => !!v && v !== 'Outro' && v.trim() !== '');
-    return Array.from(new Set(vals)).sort((a, b) => parseMonthYear(a).getTime() - parseMonthYear(b).getTime());
+      .map(r => r.mesStr || getMonthStr(r.dataSolicitacaoStr))
+      .filter((v): v is string => !!v && v.trim() !== '');
+    
+    return Array.from(new Set(vals)).sort((a, b) => {
+      const parseMonth = (s: string) => {
+        const parts = s.split(' ');
+        const mName = parts[0];
+        const yStr = parts[1];
+        const mIdx = MONTH_NAMES.indexOf(mName);
+        const y = parseInt(yStr, 10);
+        return new Date(y || 2026, mIdx >= 0 ? mIdx : 0, 1).getTime();
+      };
+      return parseMonth(b) - parseMonth(a); // Most recent month first
+    });
   }, [records]);
 
   const handleSelectChange = (name: keyof FilterState, value: string) => {

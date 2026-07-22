@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { LayoutDashboard, RefreshCw, AlertCircle } from 'lucide-react';
 import { MaintenanceRecord, MasterLookupData } from '../types';
-import FilterPanel, { FilterState } from './FilterPanel';
+import FilterPanel, { FilterState, getMonthStr } from './FilterPanel';
 import KPISection from './KPISection';
 import DiagnosticPanel from './DiagnosticPanel';
 import MaintenanceCharts from './MaintenanceCharts';
@@ -85,7 +85,10 @@ export default function DashboardView() {
       }
 
       // Month filter
-      if (filters.month && r.mesStr !== filters.month) return false;
+      if (filters.month) {
+        const recordMonth = r.mesStr || getMonthStr(r.dataSolicitacaoStr);
+        if (recordMonth !== filters.month) return false;
+      }
       
       // 3. Sector filter
       if (filters.sector && r.setor !== filters.sector) return false;
