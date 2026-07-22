@@ -78,51 +78,7 @@ export default function OrdensView() {
     fetchData();
   }, []);
 
-  // Handle Opening New OS (POST)
-  const handleCreateOS = async (newOSData: Omit<MaintenanceRecord, 'id' | 'pctStatus' | 'mesRaw' | 'mesStr' | 'isCalculatedAtrasado'>) => {
-    setErrorMsg(null);
-    setSuccessMsg(null);
 
-    try {
-      const res = await fetch('/api/ordens', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newOSData)
-      });
-      const json = await res.json();
-
-      if (!res.ok) throw new Error(json.error || 'Erro ao criar Ordem de Serviço');
-
-      setSuccessMsg('Ordem de Serviço aberta com sucesso!');
-      setIsCreateModalOpen(false);
-      fetchData();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao criar Ordem de Serviço.');
-    }
-  };
-
-  // Handle Edit / Dar Baixa (PUT)
-  const handleUpdateOS = async (updatedRecord: MaintenanceRecord) => {
-    setErrorMsg(null);
-    setSuccessMsg(null);
-
-    try {
-      const res = await fetch('/api/ordens', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedRecord)
-      });
-      const json = await res.json();
-
-      if (!res.ok) throw new Error(json.error || 'Erro ao atualizar Ordem de Serviço');
-
-      setSuccessMsg(`Ordem de Serviço atualizada com sucesso!`);
-      setEditingRecord(null);
-      fetchData();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao atualizar Ordem de Serviço.');
-    }
-  };
 
   // Handle Delete OS (DELETE)
   const handleDeleteOS = async (id: string) => {
@@ -232,26 +188,34 @@ export default function OrdensView() {
         </div>
       )}
 
-      {/* 1. Filter Panel */}
-      <FilterPanel 
-        filters={filters} 
-        setFilters={setFilters} 
-        lookups={lookups}
-        records={records}
-      />
+      {/* 1. Filter Panel & OS Table */}
+      {isLoading ? (
+        <div className="h-[40vh] w-full flex flex-col items-center justify-center gap-3 bg-slate-900/20 border border-slate-900 rounded-3xl p-8">
+          <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+          <span className="text-xs text-slate-400 font-semibold">Buscando Ordens de Serviço no Supabase...</span>
+        </div>
+      ) : (
+        <>
+          <FilterPanel 
+            filters={filters} 
+            setFilters={setFilters} 
+            lookups={lookups}
+            records={records}
+          />
 
-      {/* 2. OS Table */}
-      <AnalyticalTable 
-        records={filteredRecords}
-        onEditOS={(rec) => setEditingRecord(rec)}
-        onDeleteOS={handleDeleteOS}
-      />
+          <AnalyticalTable 
+            records={filteredRecords}
+            onEditOS={(rec) => setEditingRecord(rec)}
+            onDeleteOS={handleDeleteOS}
+          />
+        </>
+      )}
 
       {/* Modal Dialogs */}
       <CreateOSModal 
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSave={handleCreateOS}
+        onSuccess={fetchData}
         lookups={lookups}
       />
 
@@ -259,7 +223,7 @@ export default function OrdensView() {
         isOpen={!!editingRecord}
         record={editingRecord}
         onClose={() => setEditingRecord(null)}
-        onSave={handleUpdateOS}
+        onSuccess={fetchData}
         lookups={lookups}
       />
 

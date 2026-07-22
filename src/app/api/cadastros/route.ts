@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import sql from '../../../utils/db';
+import { normalizeText } from '../../../utils/helpers';
 
 // Auto-create master tables and seed Marilux initial data if empty
 async function ensureMasterTablesExist() {
@@ -125,6 +126,8 @@ export async function GET() {
   }
 }
 
+
+
 // POST: Add a new item to one of the master tables
 export async function POST(request: Request) {
   if (!process.env.DATABASE_URL) {
@@ -133,14 +136,38 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { type, nome, areaAtuacao } = body;
+    const { type, nome, areaAtuacao, ignoreSimilar } = body;
 
     if (!type || !nome || String(nome).trim() === '') {
       return NextResponse.json({ error: 'O nome do cadastro é obrigatório.' }, { status: 400 });
     }
 
     const cleanNome = String(nome).trim();
+    const normalizedNew = normalizeText(cleanNome);
     await ensureMasterTablesExist();
+
+    // Check for similar existing records to prevent duplicates
+    if (!ignoreSimilar) {
+      let existingRows: { nome: string }[] = [];
+      if (type === 'tecnico') {
+        existingRows = await sql`SELECT nome FROM cadastros_tecnicos`;
+      } else if (type === 'setor') {
+        existingRows = await sql`SELECT nome FROM cadastros_setores`;
+      } else if (type === 'area_tecnica') {
+        existingRows = await sql`SELECT nome FROM cadastros_areas_tecnicas`;
+      } else if (type === 'tipo_manutencao') {
+        existingRows = await sql`SELECT nome FROM cadastros_tipos_manutencao`;
+      }
+
+      const similar = existingRows.find(row => normalizeText(row.nome) === normalizedNew);
+      if (similar) {
+        return NextResponse.json({
+          error: 'similar_found',
+          similarName: similar.nome,
+          message: `Cadastro semelhante já existente: "${similar.nome}". Deseja reaproveitar o registro existente?`
+        }, { status: 409 });
+      }
+    }
 
     if (type === 'tecnico') {
       await sql`INSERT INTO cadastros_tecnicos (nome, area_atuacao) VALUES (${cleanNome}, ${areaAtuacao || ''})`;

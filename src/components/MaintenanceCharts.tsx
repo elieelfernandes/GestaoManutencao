@@ -17,6 +17,7 @@ import {
   Legend
 } from 'recharts';
 import { MaintenanceRecord } from '../types';
+import { getMonthStr } from './FilterPanel';
 
 interface MaintenanceChartsProps {
   records: MaintenanceRecord[];
@@ -54,8 +55,9 @@ export default function MaintenanceCharts({ records }: MaintenanceChartsProps) {
   // 2. Data Prep: Requests by Month
   const monthCounts: { [key: string]: number } = {};
   records.forEach(r => {
-    if (r.mesStr && r.mesStr !== 'Outro') {
-      monthCounts[r.mesStr] = (monthCounts[r.mesStr] || 0) + 1;
+    const month = r.mesStr || getMonthStr(r.dataSolicitacaoStr);
+    if (month && month !== 'Outro') {
+      monthCounts[month] = (monthCounts[month] || 0) + 1;
     }
   });
   const requestsByMonthData = Object.keys(monthCounts)
@@ -132,11 +134,12 @@ export default function MaintenanceCharts({ records }: MaintenanceChartsProps) {
   
   const top10SectorsData = requestsBySectorSorted.slice(0, 10);
 
-  // 7. Data Prep: Requests by Maintenance Technical Sector
+  // 6. Data Prep: Requests by Maintenance Technical Sector
   const maintSecCounts: { [key: string]: number } = {};
   records.forEach(r => {
-    if (r.setorManutencao) {
-      maintSecCounts[r.setorManutencao] = (maintSecCounts[r.setorManutencao] || 0) + 1;
+    const area = r.areaTecnica || r.setorManutencao;
+    if (area) {
+      maintSecCounts[area] = (maintSecCounts[area] || 0) + 1;
     }
   });
   const requestsByMaintSecData = Object.keys(maintSecCounts)

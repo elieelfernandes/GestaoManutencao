@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql from '../../../utils/db';
 import { MaintenanceRecord } from '../../../types';
+import { mapUiStatusToDb, mapDbStatusToUi } from '../../../utils/helpers';
 
 // Self-healing database table creation for OS
 async function ensureOrdersTableExists() {
@@ -23,7 +24,7 @@ async function ensureOrdersTableExists() {
         horario_inicio VARCHAR(50),
         horario_termino VARCHAR(50),
         observacao TEXT,
-        status VARCHAR(50) NOT NULL DEFAULT 'Não iniciado',
+        status VARCHAR(50) NOT NULL DEFAULT 'NAO_INICIADO',
         created_at TIMESTAMP DEFAULT NOW()
       )
     `;
@@ -41,7 +42,6 @@ export async function GET() {
   try {
     await ensureOrdersTableExists();
 
-    // RULE 4 & 5: Dynamic SQL Atrasado calculation and ORDER BY data_solicitacao DESC
     const recordsResult = await sql`
       SELECT 
         id, 
@@ -59,7 +59,7 @@ export async function GET() {
         horario_termino AS "horarioTermino", 
         observacao,
         CASE 
-          WHEN status != 'Concluído' AND prazo_execucao IS NOT NULL AND prazo_execucao < CURRENT_DATE THEN 'Atrasado'
+          WHEN status != 'CONCLUIDO' AND prazo_execucao IS NOT NULL AND prazo_execucao < CURRENT_DATE THEN 'ATRASADO'
           ELSE status
         END AS status,
         created_at AS "createdAt"
@@ -67,14 +67,20 @@ export async function GET() {
       ORDER BY data_solicitacao DESC, created_at DESC
     `;
 
-    return NextResponse.json({ records: recordsResult });
+    // Map database enums to UI labels
+    const mappedRecords = recordsResult.map((r: any) => ({
+      ...r,
+      status: mapDbStatusToUi(r.status)
+    }));
+
+    return NextResponse.json({ records: mappedRecords });
   } catch (err: any) {
     console.error('API GET /api/ordens Error:', err);
     return NextResponse.json({ error: err.message || 'Falha ao buscar Ordens de Serviço' }, { status: 500 });
   }
 }
 
-// POST: Open a new Service Order with mandatory field validation (Rule 2)
+// POST: Open a new Service Order with mandatory field validation
 export async function POST(request: Request) {
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({ error: 'Banco de dados não configurado (DATABASE_URL ausente).' }, { status: 500 });
@@ -101,14 +107,13 @@ export async function POST(request: Request) {
     const dataSolDate = dataSolicitacao ? dataSolicitacao : new Date().toISOString().split('T')[0];
     const prazoExecDate = prazoExecucaoStr && prazoExecucaoStr.trim() !== '' ? prazoExecucaoStr : null;
 
-    // RULE 3: Insert using Postgres native UUID DEFAULT gen_random_uuid()
     const result = await sql`
       INSERT INTO ordens_servico (
         data_solicitacao, hora_solicitacao, setor, descricao, tipo_manutencao, 
         responsavel, area_tecnica, prioridade, prazo_execucao, observacao, status
       ) VALUES (
         ${dataSolDate}, ${horaSolicitacao || ''}, ${setor}, ${descricao}, ${tipoManutencao},
-        ${responsavel}, ${areaTecnica}, ${prioridade}, ${prazoExecDate}, ${observacao || ''}, 'Não iniciado'
+        ${responsavel}, ${areaTecnica}, ${prioridade}, ${prazoExecDate}, ${observacao || ''}, 'NAO_INICIADO'
       )
       RETURNING id
     `;
@@ -138,9 +143,11 @@ export async function PUT(request: Request) {
 
     const dataExecDate = dataExecucaoStr && dataExecucaoStr.trim() !== '' ? dataExecucaoStr : null;
 
+    const dbStatus = mapUiStatusToDb(status);
+
     await sql`
       UPDATE ordens_servico SET
-        status = ${status || 'Não iniciado'},
+        status = ${dbStatus},
         responsavel = ${responsavel},
         data_execucao = ${dataExecDate},
         horario_inicio = ${horarioInicio || ''},

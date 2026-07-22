@@ -61,7 +61,12 @@ export default function CadastrosView() {
   }, []);
 
   // Add a new master item
-  const handleAdd = async (type: 'tecnico' | 'setor' | 'area_tecnica' | 'tipo_manutencao', nome: string, extra?: string) => {
+  const handleAdd = async (
+    type: 'tecnico' | 'setor' | 'area_tecnica' | 'tipo_manutencao',
+    nome: string,
+    extra?: string,
+    ignoreSimilar = false
+  ) => {
     if (!nome.trim()) {
       setErrorMsg('O nome do cadastro não pode estar em branco.');
       return;
@@ -74,12 +79,19 @@ export default function CadastrosView() {
       const res = await fetch('/api/cadastros', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, nome: nome.trim(), areaAtuacao: extra })
+        body: JSON.stringify({ type, nome: nome.trim(), areaAtuacao: extra, ignoreSimilar })
       });
       const json = await res.json();
 
+      if (res.status === 409 && json.error === 'similar_found') {
+        if (confirm(`Aviso: Já existe um cadastro muito semelhante chamado "${json.similarName}".\n\nDeseja mesmo criar um novo registro em vez de reaproveitar o atual?`)) {
+          await handleAdd(type, nome, extra, true);
+        }
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error(json.error || 'Falha ao cadastrar item');
+        throw new Error(json.error || json.message || 'Falha ao cadastrar item');
       }
 
       setSuccessMsg(json.message || 'Cadastro adicionado com sucesso!');

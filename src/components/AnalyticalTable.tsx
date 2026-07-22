@@ -41,11 +41,11 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
   const columns = [
     columnHelper.accessor('dataSolicitacaoStr', {
       header: 'Data',
-      cell: info => <span className="font-medium text-slate-300">{info.getValue() || '—'}</span>
+      cell: info => <span className="font-medium text-slate-300 whitespace-nowrap">{info.getValue() || '—'}</span>
     }),
     columnHelper.accessor('setor', {
       header: 'Setor',
-      cell: info => <span className="font-semibold text-white">{info.getValue() || '—'}</span>
+      cell: info => <span className="font-semibold text-white whitespace-nowrap">{info.getValue() || '—'}</span>
     }),
     columnHelper.accessor('descricao', {
       header: 'Descrição do Serviço',
@@ -60,7 +60,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
       cell: info => {
         const val = info.getValue();
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-purple-300 border border-purple-500/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-purple-300 border border-purple-500/20 whitespace-nowrap">
             {val}
           </span>
         );
@@ -68,7 +68,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
     }),
     columnHelper.accessor('responsavel', {
       header: 'Responsável',
-      cell: info => <span className="text-amber-400 font-semibold">{info.getValue() || '—'}</span>
+      cell: info => <span className="text-amber-400 font-semibold whitespace-nowrap">{info.getValue() || '—'}</span>
     }),
     columnHelper.accessor('prioridade', {
       header: 'Prioridade',
@@ -79,7 +79,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
         if (val === 'Média') colorClass = 'bg-amber-950/40 text-amber-400 border-amber-800/30';
         if (val === 'Baixa') colorClass = 'bg-cyan-950/40 text-cyan-400 border-cyan-800/30';
         return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${colorClass}`}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${colorClass} whitespace-nowrap`}>
             {val}
           </span>
         );
@@ -87,11 +87,11 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
     }),
     columnHelper.accessor('areaTecnica', {
       header: 'Área Técnica',
-      cell: info => <span className="text-slate-400 text-xs">{info.getValue() || '—'}</span>
+      cell: info => <span className="text-slate-400 text-xs whitespace-nowrap">{info.getValue() || '—'}</span>
     }),
     columnHelper.accessor('status', {
       header: 'Status',
-      cell: info => <StatusBadge status={info.getValue()} />
+      cell: info => <StatusBadge status={info.getValue()} className="whitespace-nowrap" />
     }),
     columnHelper.accessor('observacao', {
       header: 'Observação',
@@ -107,7 +107,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
       cell: ({ row }) => {
         const record = row.original;
         return (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             {onEditOS && (
               <button
                 onClick={() => onEditOS(record)}

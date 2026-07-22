@@ -1,19 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle2, Clock, Calendar, User, FileText, Wrench } from 'lucide-react';
+import { X, CheckCircle2, Clock, Calendar, User, FileText, Wrench, AlertCircle } from 'lucide-react';
 import { MaintenanceRecord, MasterLookupData, StatusType } from '../types';
 
 interface EditOSModalProps {
   record: MaintenanceRecord | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedRecord: MaintenanceRecord) => void;
+  onSuccess: () => void;
   lookups: MasterLookupData;
 }
 
-export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }: EditOSModalProps) {
+export default function EditOSModal({ record, isOpen, onClose, onSuccess, lookups }: EditOSModalProps) {
   const [formData, setFormData] = useState<Partial<MaintenanceRecord>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (record) {
@@ -22,6 +24,7 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
         ...record,
         dataExecucaoStr: record.dataExecucaoStr || (record.status === 'Concluído' ? today : '')
       });
+      setErrorMsg(null);
     }
   }, [record]);
 
@@ -41,12 +44,16 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.status) return;
+    setErrorMsg(null);
+
+    if (!formData.status) {
+      setErrorMsg('O status é obrigatório.');
+      return;
+    }
 
     const dataExecObj = formData.dataExecucaoStr ? new Date(formData.dataExecucaoStr + 'T00:00:00Z') : null;
-    const isConcluido = formData.status === 'Concluído';
 
     const updatedRecord: MaintenanceRecord = {
       ...record,
@@ -60,13 +67,32 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
       responsavel: formData.responsavel || record.responsavel
     };
 
-    onSave(updatedRecord);
-    onClose();
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch('/api/ordens', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRecord)
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || 'Erro ao atualizar Ordem de Serviço');
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Falha ao salvar as alterações no banco de dados.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-6 overflow-y-auto max-h-[90vh]">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 overflow-y-auto max-h-[90vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -76,16 +102,28 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Editar / Dar Baixa na OS</h2>
-              <p className="text-xs text-slate-400">ID: <span className="text-blue-400 font-mono">{record.id}</span></p>
+              <p className="text-xs text-slate-400">Insira as informações de atendimento da ordem de serviço</p>
             </div>
           </div>
           <button 
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-full transition-all"
+            disabled={isSubmitting}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Local Error Message callout */}
+        {errorMsg && (
+          <div className="bg-red-950/40 border border-red-900/60 rounded-2xl p-4 flex items-start gap-3 text-red-300 animate-in slide-in-from-top duration-200">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="text-xs font-semibold leading-relaxed">
+              <strong className="block text-white font-bold mb-0.5">Erro ao Salvar:</strong>
+              {errorMsg}
+            </div>
+          </div>
+        )}
 
         {/* Ticket Overview Badge */}
         <div className="bg-slate-950 border border-slate-850 p-4 rounded-2xl space-y-2">
@@ -123,6 +161,7 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
                         : 'bg-slate-700 text-white border-slate-600'
                       : 'bg-slate-950 text-slate-400 border-slate-850 hover:bg-slate-800'
                   }`}
+                  disabled={isSubmitting}
                 >
                   {st}
                 </button>
@@ -140,6 +179,7 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
                 value={formData.responsavel || ''}
                 onChange={(e) => setFormData({ ...formData, responsavel: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
+                disabled={isSubmitting}
               >
                 {lookups.responsibles.map(r => (
                   <option key={r} value={r}>{r}</option>
@@ -157,6 +197,7 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
                 value={formData.dataExecucaoStr || ''}
                 onChange={(e) => setFormData({ ...formData, dataExecucaoStr: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -171,6 +212,7 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
                 value={formData.horarioInicio || ''}
                 onChange={(e) => setFormData({ ...formData, horarioInicio: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -185,6 +227,7 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
                 value={formData.horarioTermino || ''}
                 onChange={(e) => setFormData({ ...formData, horarioTermino: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -200,6 +243,7 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
               onChange={(e) => setFormData({ ...formData, observacao: e.target.value })}
               placeholder="Descreva o serviço realizado ou motivo de atraso..."
               className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 text-slate-200 text-xs rounded-xl p-3 outline-none transition-all resize-none"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -209,14 +253,16 @@ export default function EditOSModal({ record, isOpen, onClose, onSave, lookups }
               type="button"
               onClick={onClose}
               className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all"
+              disabled={isSubmitting}
             >
               Cancelar
             </button>
             <button
               type="submit"
               className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2"
+              disabled={isSubmitting}
             >
-              <CheckCircle2 className="w-4 h-4" /> Salvar Alterações
+              <CheckCircle2 className="w-4 h-4" /> {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
 
