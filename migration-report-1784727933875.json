@@ -1,0 +1,22 @@
+{
+  "timestamp": 1784727933875,
+  "mode": "write",
+  "backupConfirmed": true,
+  "tecnicos": [
+    {
+      "canonical": {
+        "id": 4,
+        "nome": "Cícero"
+      },
+      "discards": [
+        {
+          "id": 5,
+          "nome": "Cicero"
+        }
+      ],
+      "impactedOrders": 12
+    }
+  ],
+  "setores": [],
+  "statusMigratedCount": 559
+}
