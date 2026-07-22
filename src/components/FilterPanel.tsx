@@ -44,7 +44,6 @@ export function getMonthStr(dateStr?: string): string {
 
 export default function FilterPanel({ filters, setFilters, lookups, records }: FilterPanelProps) {
   
-  // Extract unique values from records as a fallback/complement
   const getUniqueValues = (key: keyof MaintenanceRecord) => {
     const vals = records.map(r => {
       const val = r[key];
@@ -59,11 +58,9 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
   const priorities = ['Alta', 'Média', 'Baixa'];
   const statuses = ['Concluído', 'Em andamento', 'Não iniciado', 'Atrasado'];
   const maintSectors = lookups.maintenanceSectors.length > 0 ? lookups.maintenanceSectors : getUniqueValues('areaTecnica');
-  
-  // Gather dynamic maintenance types from records
   const types = lookups.types.length > 0 ? lookups.types : getUniqueValues('tipoManutencao');
 
-  // Dynamically extract and format available months from records (e.g., "Janeiro 2026", "Fevereiro 2026")
+  // Dynamically extract and format available months from records
   const months = React.useMemo(() => {
     const vals = records
       .map(r => r.mesStr || getMonthStr(r.dataSolicitacaoStr))
@@ -78,7 +75,7 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
         const y = parseInt(yStr, 10);
         return new Date(y || 2026, mIdx >= 0 ? mIdx : 0, 1).getTime();
       };
-      return parseMonth(b) - parseMonth(a); // Most recent month first
+      return parseMonth(b) - parseMonth(a);
     });
   }, [records]);
 
@@ -105,17 +102,17 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
       
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-        <div className="flex items-center gap-2 text-white font-bold text-sm uppercase tracking-wider">
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3 mb-4">
+        <div className="flex items-center gap-2 text-slate-800 dark:text-white font-bold text-sm uppercase tracking-wider">
           <Filter className="w-4 h-4 text-blue-500" />
           Filtros de Pesquisa
         </div>
         <button 
           onClick={handleReset}
-          className="flex items-center gap-1 text-[10px] uppercase font-bold text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-800 py-1.5 px-3 rounded-lg border border-slate-700/50"
+          className="flex items-center gap-1 text-[10px] uppercase font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 py-1.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700/50 transition-all cursor-pointer"
         >
           <RotateCcw className="w-3 h-3" />
           Limpar Filtros
@@ -127,54 +124,54 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
         
         {/* Search Input */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Buscar na Descrição</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Buscar na Descrição</label>
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-550" />
             <input 
               type="text"
               placeholder="Digite termos para busca..."
               value={filters.search}
               onChange={(e) => handleSelectChange('search', e.target.value)}
-              className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2.5 outline-none transition-all placeholder:text-slate-600"
+              className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2.5 outline-none transition-all placeholder:text-slate-400"
             />
           </div>
         </div>
 
         {/* Date Period - Start */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data Início</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Data Início</label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-500 pointer-events-none" />
+            <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-550 pointer-events-none" />
             <input 
-              type="date"
+              type="date" 
               value={filters.startDate}
               onChange={(e) => handleSelectChange('startDate', e.target.value)}
-              className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition-all"
+              className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition-all"
             />
           </div>
         </div>
 
         {/* Date Period - End */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data Fim</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Data Fim</label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-500 pointer-events-none" />
+            <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-550 pointer-events-none" />
             <input 
-              type="date"
+              type="date" 
               value={filters.endDate}
               onChange={(e) => handleSelectChange('endDate', e.target.value)}
-              className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition-all"
+              className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition-all"
             />
           </div>
         </div>
 
         {/* Month Filter */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mês de Referência</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mês de Referência</label>
           <select
             value={filters.month}
             onChange={(e) => handleSelectChange('month', e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
           >
             <option value="">Todos os Meses</option>
             {months.map(m => (
@@ -185,11 +182,11 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
 
         {/* Sector Filter */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Setor Requisitante</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Setor Requisitante</label>
           <select
             value={filters.sector}
             onChange={(e) => handleSelectChange('sector', e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
           >
             <option value="">Todos os Setores</option>
             {sectors.map(sec => (
@@ -200,11 +197,11 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
 
         {/* Status Filter */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status Atividade</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Atividade</label>
           <select
             value={filters.status}
             onChange={(e) => handleSelectChange('status', e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
           >
             <option value="">Todos os Status</option>
             {statuses.map(st => (
@@ -215,11 +212,11 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
 
         {/* Maintenance Type Filter */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo Manutenção</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tipo Manutenção</label>
           <select
             value={filters.type}
             onChange={(e) => handleSelectChange('type', e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
           >
             <option value="">Todos os Tipos</option>
             {types.map(t => (
@@ -230,11 +227,11 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
 
         {/* Priority Filter */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Prioridade</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prioridade</label>
           <select
             value={filters.priority}
             onChange={(e) => handleSelectChange('priority', e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
           >
             <option value="">Todas as Prioridades</option>
             {priorities.map(p => (
@@ -245,11 +242,11 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
 
         {/* Responsible Filter */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Responsável Técnico</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Responsável Técnico</label>
           <select
             value={filters.responsible}
             onChange={(e) => handleSelectChange('responsible', e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
           >
             <option value="">Todos os Técnicos</option>
             {responsibles.map(resp => (
@@ -260,11 +257,11 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
 
         {/* Maintenance Sector Filter */}
         <div className="flex flex-col gap-1.5 sm:col-span-2 md:col-span-1">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Setor da Manutenção (Área)</label>
+          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Setor da Manutenção (Área)</label>
           <select
             value={filters.maintSector}
             onChange={(e) => handleSelectChange('maintSector', e.target.value)}
-            className="w-full bg-slate-950/60 border border-slate-850 focus:border-blue-500 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
+            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
           >
             <option value="">Todas as Áreas Técnicas</option>
             {maintSectors.map(ms => (

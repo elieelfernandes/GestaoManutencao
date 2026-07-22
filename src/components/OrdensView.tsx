@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ClipboardList, Plus, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { MaintenanceRecord, MasterLookupData, PriorityType } from '../types';
+import { MaintenanceRecord, MasterLookupData } from '../types';
 import FilterPanel, { FilterState } from './FilterPanel';
 import AnalyticalTable from './AnalyticalTable';
 import CreateOSModal from './CreateOSModal';
@@ -78,8 +78,6 @@ export default function OrdensView() {
     fetchData();
   }, []);
 
-
-
   // Handle Delete OS (DELETE)
   const handleDeleteOS = async (id: string) => {
     if (!confirm('Deseja realmente excluir esta Ordem de Serviço?')) return;
@@ -141,12 +139,12 @@ export default function OrdensView() {
     <div className="space-y-8 animate-in fade-in duration-300">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-6">
         <div>
-          <h2 className="text-xl font-extrabold text-white tracking-wide flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-slate-800 dark:text-white tracking-wide flex items-center gap-2">
             <ClipboardList className="w-6 h-6 text-blue-500" /> ÁREA 2 — Ordens de Serviço
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Abra novos chamados de manutenção, aplique filtros combinados e dê baixa com horários e pareceres.
           </p>
         </div>
@@ -155,7 +153,7 @@ export default function OrdensView() {
           <button
             onClick={fetchData}
             disabled={isLoading}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold text-xs py-2.5 px-4 rounded-xl border border-slate-800 transition-all"
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-300 font-bold text-xs py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 transition-all shadow-sm cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-400' : ''}`} />
             Atualizar OS
@@ -163,7 +161,7 @@ export default function OrdensView() {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-lg shadow-blue-600/20 active:scale-98 transition-all"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm active:scale-98 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Nova Ordem de Serviço
           </button>
@@ -172,27 +170,27 @@ export default function OrdensView() {
 
       {/* Alert Banners */}
       {errorMsg && (
-        <div className="bg-red-950/40 border border-red-900/60 rounded-2xl p-4 flex items-start gap-3 text-red-300 animate-in fade-in">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3 text-red-800 animate-in fade-in dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
+          <AlertCircle className="w-5 h-5 text-red-650 dark:text-red-400 shrink-0 mt-0.5" />
           <div className="text-xs font-semibold leading-relaxed">
-            <strong className="block text-white font-bold mb-0.5">Erro na Operação:</strong>
+            <strong className="block text-slate-900 dark:text-white font-bold mb-0.5">Erro na Operação:</strong>
             {errorMsg}
           </div>
         </div>
       )}
 
       {successMsg && (
-        <div className="bg-emerald-950/40 border border-emerald-900/60 rounded-2xl p-4 flex items-start gap-3 text-emerald-300 animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+        <div className="bg-emerald-50 border border-emerald-250 rounded-2xl p-4 flex items-start gap-3 text-emerald-800 animate-in fade-in dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-300">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
           <div className="text-xs font-semibold">{successMsg}</div>
         </div>
       )}
 
       {/* 1. Filter Panel & OS Table */}
       {isLoading ? (
-        <div className="h-[40vh] w-full flex flex-col items-center justify-center gap-3 bg-slate-900/20 border border-slate-900 rounded-3xl p-8">
+        <div className="h-[40vh] w-full flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-sm">
           <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-          <span className="text-xs text-slate-400 font-semibold">Buscando Ordens de Serviço no Supabase...</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Buscando Ordens de Serviço no Supabase...</span>
         </div>
       ) : (
         <>
