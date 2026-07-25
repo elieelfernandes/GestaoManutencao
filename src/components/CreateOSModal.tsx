@@ -60,6 +60,14 @@ export default function CreateOSModal({ isOpen, onClose, onSuccess, lookups }: C
       setErrorMsg('A data de solicitação é obrigatória.');
       return;
     }
+
+    const selectedDate = new Date(formData.dataStr + 'T00:00:00');
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    if (selectedDate > todayDate) {
+      setErrorMsg('A data de solicitação não pode ser no futuro. Selecione o dia de hoje ou uma data passada.');
+      return;
+    }
     if (!formData.horaSolicitacao.trim()) {
       setErrorMsg('A hora da solicitação é obrigatória.');
       return;

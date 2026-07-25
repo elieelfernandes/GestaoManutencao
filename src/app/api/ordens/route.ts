@@ -102,6 +102,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate request date is not in the future
+    const selectedDate = new Date(dataSolicitacao + 'T00:00:00');
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    if (selectedDate > todayDate) {
+      return NextResponse.json(
+        { error: 'A data de solicitação não pode ser no futuro. Selecione o dia de hoje ou uma data passada.' },
+        { status: 400 }
+      );
+    }
+
     await ensureOrdersTableExists();
 
     const dataSolDate = dataSolicitacao ? dataSolicitacao : new Date().toISOString().split('T')[0];
