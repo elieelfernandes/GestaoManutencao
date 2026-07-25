@@ -8,7 +8,8 @@ import {
   getPaginationRowModel,
   flexRender,
   createColumnHelper,
-  SortingState
+  SortingState,
+  ColumnDef
 } from '@tanstack/react-table';
 import { 
   ChevronDown, 
@@ -24,6 +25,7 @@ import {
 import * as XLSX from 'xlsx';
 import { MaintenanceRecord } from '../types';
 import StatusBadge from './StatusBadge';
+import { formatDateBr } from '../utils/helpers';
 
 interface AnalyticalTableProps {
   records: MaintenanceRecord[];
@@ -37,11 +39,11 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalSearch, setGlobalSearch] = useState('');
 
-  // Define table columns
-  const columns = [
+  // Define base table columns
+  const baseColumns: ColumnDef<MaintenanceRecord, any>[] = [
     columnHelper.accessor('dataSolicitacaoStr', {
       header: 'Data',
-      cell: info => <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{info.getValue() || '—'}</span>
+      cell: info => <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDateBr(info.getValue())}</span>
     }),
     columnHelper.accessor('setor', {
       header: 'Setor',
@@ -100,41 +102,52 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
           {info.getValue() || '—'}
         </div>
       )
-    }),
-    columnHelper.display({
-      id: 'acoes',
-      header: 'Ações',
-      cell: ({ row }) => {
-        const record = row.original;
-        return (
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
-            {onEditOS && (
-              <button
-                onClick={() => onEditOS(record)}
-                className="p-1.5 text-blue-600 dark:text-blue-400 hover:text-white bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-600 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-all cursor-pointer"
-                title="Editar / Dar Baixa"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {onDeleteOS && (
-              <button
-                onClick={() => {
-                  if (confirm(`Tem certeza que deseja excluir a OS "${record.descricao}"?`)) {
-                    onDeleteOS(record.id);
-                  }
-                }}
-                className="p-1.5 text-rose-600 dark:text-rose-400 hover:text-white bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-600 rounded-lg border border-rose-200 dark:border-rose-500/20 transition-all cursor-pointer"
-                title="Excluir Ordem de Serviço"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        );
-      }
     })
   ];
+
+  // Dynamically append actions column only if callbacks exist
+  const columns = React.useMemo(() => {
+    const cols = [...baseColumns];
+    if (onEditOS || onDeleteOS) {
+      cols.push(
+        columnHelper.display({
+          id: 'acoes',
+          header: 'Ações',
+          cell: ({ row }) => {
+            const record = row.original;
+            return (
+              <div className="flex items-center gap-1.5 whitespace-nowrap">
+                {onEditOS && (
+                  <button
+                    onClick={() => onEditOS(record)}
+                    className="p-1.5 text-blue-600 dark:text-blue-400 hover:text-white bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-600 rounded-lg border border-blue-200 dark:border-blue-500/20 transition-all cursor-pointer"
+                    title="Editar / Dar Baixa"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {onDeleteOS && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`Tem certeza que deseja excluir a OS "${record.descricao}"?`)) {
+                        onDeleteOS(record.id);
+                      }
+                    }}
+                    className="p-1.5 text-rose-600 dark:text-rose-400 hover:text-white bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-600 rounded-lg border border-rose-200 dark:border-rose-500/20 transition-all cursor-pointer"
+                    title="Excluir Ordem de Serviço"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          }
+        })
+      );
+    }
+    return cols;
+  }, [onEditOS, onDeleteOS]);
+
 
   // Filter records based on global search in description or sector or responsible
   const filteredData = React.useMemo(() => {
@@ -171,20 +184,20 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
     if (filteredData.length === 0) return;
 
     const dataToExport = filteredData.map(r => ({
-      'Data OS': r.dataSolicitacaoStr || (r as any).dataStr || '—',
+      'Data OS': formatDateBr(r.dataSolicitacaoStr || (r as any).dataStr),
       'Hora Solicitação': r.horaSolicitacao || '—',
       'Setor Solicitante': r.setor || '—',
       'Descrição do Serviço': r.descricao || '—',
       'Tipo de Manutenção': r.tipoManutencao || '—',
       'Responsável': r.responsavel || '—',
       'Prioridade': r.prioridade || '—',
-      'Data de Execução': r.dataExecucaoStr || '—',
+      'Data de Execução': formatDateBr(r.dataExecucaoStr),
       'Início': r.horarioInicio || '—',
       'Término': r.horarioTermino || '—',
       'Status': r.status || '—',
       'Progresso (%)': (r as any).pctStatus !== undefined ? `${((r as any).pctStatus * 100).toFixed(0)}%` : '—',
       'Setor da Manutenção (Área)': r.areaTecnica || r.setorManutencao || '—',
-      'Prazo Execução': r.prazoExecucaoStr || '—',
+      'Prazo Execução': formatDateBr(r.prazoExecucaoStr),
       'Prazo (Dias)': r.prazo || '—',
       'Observação': r.observacao || '—'
     }));

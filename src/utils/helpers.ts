@@ -26,3 +26,16 @@ export function mapDbStatusToUi(status: string | null | undefined): string {
   if (clean === 'ATRASADO' || clean === 'Atrasado') return 'Atrasado';
   return 'Não iniciado';
 }
+
+// Convert YYYY-MM-DD to DD/MM/YYYY
+export function formatDateBr(dateStr?: string | null): string {
+  if (!dateStr) return '—';
+  if (dateStr.includes('/')) return dateStr;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+}
+

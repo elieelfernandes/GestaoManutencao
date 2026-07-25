@@ -7,6 +7,7 @@ import FilterPanel, { FilterState, getMonthStr } from './FilterPanel';
 import KPISection from './KPISection';
 import DiagnosticPanel from './DiagnosticPanel';
 import MaintenanceCharts from './MaintenanceCharts';
+import AnalyticalTable from './AnalyticalTable';
 
 export default function DashboardView() {
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
@@ -184,9 +185,18 @@ export default function DashboardView() {
           <div className="border-t border-slate-200 dark:border-slate-900 pt-6">
             <div className="mb-6">
               <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-wide">Visões Gráficas Operacionais</h3>
-              <p className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">Distribuição estatística por setor, tipo, prioridade e técnico</p>
+              <p className="text-slate-400 dark:text-slate-550 text-xs mt-0.5">Distribuição estatística por setor, tipo, prioridade e técnico</p>
             </div>
             <MaintenanceCharts records={filteredRecords} />
+          </div>
+
+          {/* 5. Ordens de Serviço Filtradas (Tabela Analítica) */}
+          <div className="border-t border-slate-200 dark:border-slate-900 pt-6 space-y-4">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-800 dark:text-white tracking-wide">Ordens de Serviço Filtradas</h3>
+              <p className="text-slate-400 dark:text-slate-550 text-xs mt-0.5">Detalhamento das ordens correspondentes aos filtros selecionados acima</p>
+            </div>
+            <AnalyticalTable records={filteredRecords} />
           </div>
         </>
       )}

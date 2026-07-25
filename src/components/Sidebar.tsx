@@ -117,7 +117,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       <div className="p-4 border border-slate-100 dark:border-slate-900 m-4 rounded-2xl bg-slate-50/55 dark:bg-slate-900/40">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Base Neon Conectada</span>
+          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Banco de Dados Conectado</span>
         </div>
         <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Sincronia 100% em Tempo Real</p>
       </div>
