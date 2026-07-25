@@ -56,12 +56,40 @@ export default function CreateOSModal({ isOpen, onClose, onSuccess, lookups }: C
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!formData.descricao.trim()) {
-      setErrorMsg('Por favor, informe a descrição do serviço.');
+    if (!formData.dataStr) {
+      setErrorMsg('A data de solicitação é obrigatória.');
       return;
     }
-    if (!formData.setor || !formData.tipoManutencao || !formData.responsavel || !formData.setorManutencao) {
-      setErrorMsg('Todos os campos obrigatórios (Setor, Tipo, Responsável, Área) devem ser selecionados.');
+    if (!formData.horaSolicitacao.trim()) {
+      setErrorMsg('A hora da solicitação é obrigatória.');
+      return;
+    }
+    if (!formData.setor) {
+      setErrorMsg('O setor solicitante é obrigatório.');
+      return;
+    }
+    if (!formData.tipoManutencao) {
+      setErrorMsg('O tipo de manutenção é obrigatório.');
+      return;
+    }
+    if (!formData.prioridade) {
+      setErrorMsg('A prioridade é obrigatória.');
+      return;
+    }
+    if (!formData.responsavel) {
+      setErrorMsg('O técnico responsável é obrigatório.');
+      return;
+    }
+    if (!formData.setorManutencao) {
+      setErrorMsg('A área técnica da manutenção é obrigatória.');
+      return;
+    }
+    if (!formData.prazoExecucaoStr) {
+      setErrorMsg('O prazo limite desejado é obrigatório.');
+      return;
+    }
+    if (!formData.descricao.trim()) {
+      setErrorMsg('A descrição do serviço é obrigatória.');
       return;
     }
 
@@ -159,7 +187,7 @@ export default function CreateOSModal({ isOpen, onClose, onSuccess, lookups }: C
             {/* Hora Solicitação */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-650 dark:text-slate-300 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-blue-500" /> Hora da Solicitação
+                <Clock className="w-3.5 h-3.5 text-blue-500" /> Hora da Solicitação *
               </label>
               <input 
                 type="text" 
@@ -167,6 +195,7 @@ export default function CreateOSModal({ isOpen, onClose, onSuccess, lookups }: C
                 placeholder="Ex: 08:30"
                 onChange={(e) => setFormData({ ...formData, horaSolicitacao: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-850 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
+                required
               />
             </div>
 
@@ -262,13 +291,14 @@ export default function CreateOSModal({ isOpen, onClose, onSuccess, lookups }: C
             {/* Prazo de Execução */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-650 dark:text-slate-300 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-amber-500" /> Prazo Limite desejado
+                <Calendar className="w-3.5 h-3.5 text-amber-500" /> Prazo Limite desejado *
               </label>
               <input 
                 type="date" 
                 value={formData.prazoExecucaoStr}
                 onChange={(e) => setFormData({ ...formData, prazoExecucaoStr: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-850 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
+                required
               />
             </div>
           </div>
