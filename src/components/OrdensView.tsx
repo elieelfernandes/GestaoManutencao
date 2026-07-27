@@ -46,9 +46,16 @@ export default function OrdensView() {
     setErrorMsg(null);
 
     try {
-      // 1. Fetch Cadastros Mestre
-      const resCad = await fetch('/api/cadastros');
-      const jsonCad = await resCad.json();
+      // Fetch both in parallel
+      const [resCad, resOrd] = await Promise.all([
+        fetch('/api/cadastros'),
+        fetch('/api/ordens')
+      ]);
+
+      const [jsonCad, jsonOrd] = await Promise.all([
+        resCad.json(),
+        resOrd.json()
+      ]);
 
       if (resCad.ok) {
         setLookups({
@@ -59,10 +66,6 @@ export default function OrdensView() {
           priorities: ['Alta', 'Média', 'Baixa']
         });
       }
-
-      // 2. Fetch OS Records
-      const resOrd = await fetch('/api/ordens');
-      const jsonOrd = await resOrd.json();
 
       if (!resOrd.ok) throw new Error(jsonOrd.error || 'Falha ao buscar Ordens de Serviço');
       setRecords(jsonOrd.records || []);

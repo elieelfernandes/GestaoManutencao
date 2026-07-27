@@ -41,9 +41,16 @@ export default function DashboardView() {
     setErrorMsg(null);
 
     try {
-      // 1. Fetch Lookups for filter dropdowns
-      const resCad = await fetch('/api/cadastros');
-      const jsonCad = await resCad.json();
+      // Fetch both in parallel
+      const [resCad, resOrd] = await Promise.all([
+        fetch('/api/cadastros'),
+        fetch('/api/ordens')
+      ]);
+
+      const [jsonCad, jsonOrd] = await Promise.all([
+        resCad.json(),
+        resOrd.json()
+      ]);
 
       if (resCad.ok) {
         setLookups({
@@ -55,12 +62,8 @@ export default function DashboardView() {
         });
       }
 
-      // 2. Fetch OS Records
-      const res = await fetch('/api/ordens');
-      const json = await res.json();
-
-      if (!res.ok) throw new Error(json.error || 'Falha ao buscar dados do Dashboard');
-      setRecords(json.records || []);
+      if (!resOrd.ok) throw new Error(jsonOrd.error || 'Falha ao buscar dados do Dashboard');
+      setRecords(jsonOrd.records || []);
     } catch (err: any) {
       setErrorMsg(err.message || 'Erro de conexão com o banco de dados.');
     } finally {

@@ -103,6 +103,10 @@ export async function GET() {
       ].map((nome, i) => ({ id: i + 1, nome })),
       areasTecnicas: ['Automação', 'Elétrica', 'Mecânica', 'Predial'].map((nome, i) => ({ id: i + 1, nome })),
       tiposManutencao: ['Apoio Técnico', 'Corretiva', 'Expansão', 'Melhoria', 'Preventiva'].map((nome, i) => ({ id: i + 1, nome }))
+    }, {
+      headers: {
+        'Cache-Control': 's-maxage=3600, stale-while-revalidate'
+      }
     });
   }
 
@@ -119,6 +123,10 @@ export async function GET() {
       setores,
       areasTecnicas,
       tiposManutencao
+    }, {
+      headers: {
+        'Cache-Control': 's-maxage=3600, stale-while-revalidate'
+      }
     });
   } catch (err: any) {
     console.error('API GET /api/cadastros Error:', err);
