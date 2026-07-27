@@ -190,7 +190,7 @@ export default function OrdensView() {
       {isLoading ? (
         <div className="h-[40vh] w-full flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-sm">
           <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Buscando Ordens de Serviço no Supabase...</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Carregando Ordens de Serviço...</span>
         </div>
       ) : (
         <>
