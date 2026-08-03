@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert } from 'lucide-react';
+import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert, ChevronUp, ChevronDown } from 'lucide-react';
 import { AssetRecord, AssetCategory, AssetSituation } from '../types';
 import CreateAtivoModal from './CreateAtivoModal';
 import EditAtivoModal from './EditAtivoModal';
@@ -14,6 +14,9 @@ interface FilterState {
   search: string;
 }
 
+type SortField = 'numeroPatrimonio' | 'descricao' | 'dataAquisicaoStr' | 'valorAquisicao' | 'valorResidual';
+type SortOrder = 'asc' | 'desc';
+
 export default function AtivosView() {
   const [records, setRecords] = useState<AssetRecord[]>([]);
   const [sectors, setSectors] = useState<{ id: number; nome: string }[]>([]);
@@ -22,6 +25,10 @@ export default function AtivosView() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Sorting
+  const [sortField, setSortField] = useState<SortField>('dataAquisicaoStr');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -95,9 +102,18 @@ export default function AtivosView() {
     });
   };
 
-  // Filter logic
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  // Filter & Sort logic
   const filteredRecords = useMemo(() => {
-    return records.filter(r => {
+    const filtered = records.filter(r => {
       if (filters.categoria && r.categoria !== filters.categoria) return false;
       if (filters.setorId && String(r.setorId) !== filters.setorId) return false;
       if (filters.situacao && r.situacao !== filters.situacao) return false;
@@ -110,7 +126,35 @@ export default function AtivosView() {
       }
       return true;
     });
-  }, [records, filters]);
+
+    // Sorting
+    return [...filtered].sort((a, b) => {
+      let valA = a[sortField];
+      let valB = b[sortField];
+
+      // Handle nulls/undefined to always sort them at the end of the order
+      if (valA === null || valA === undefined) {
+        return sortOrder === 'asc' ? 1 : -1;
+      }
+      if (valB === null || valB === undefined) {
+        return sortOrder === 'asc' ? -1 : 1;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        const strA = sortField === 'descricao' ? valA.toLowerCase() : valA;
+        const strB = sortField === 'descricao' ? valB.toLowerCase() : valB;
+        if (strA < strB) return sortOrder === 'asc' ? -1 : 1;
+        if (strA > strB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+  }, [records, filters, sortField, sortOrder]);
 
   const categories: AssetCategory[] = [
     'Máquinas e Equipamentos',
@@ -289,14 +333,65 @@ export default function AtivosView() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Patrimônio</th>
-                  <th className="py-3 px-4">Descrição</th>
+                  <th 
+                    onClick={() => handleSort('numeroPatrimonio')}
+                    className="py-3 px-4 cursor-pointer hover:text-slate-700 dark:hover:text-slate-350 select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      Patrimônio
+                      {sortField === 'numeroPatrimonio' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('descricao')}
+                    className="py-3 px-4 cursor-pointer hover:text-slate-700 dark:hover:text-slate-350 select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      Descrição
+                      {sortField === 'descricao' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3 px-4">Categoria</th>
                   <th className="py-3 px-4">Alocação (Setor / Resp)</th>
                   <th className="py-3 px-4">Marca / Modelo</th>
-                  <th className="py-3 px-4">Valor Compra / Data</th>
+                  <th 
+                    onClick={() => handleSort('valorAquisicao')}
+                    className="py-3 px-4 cursor-pointer hover:text-slate-700 dark:hover:text-slate-350 select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      Valor Compra
+                      {sortField === 'valorAquisicao' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    onClick={() => handleSort('dataAquisicaoStr')}
+                    className="py-3 px-4 cursor-pointer hover:text-slate-700 dark:hover:text-slate-350 select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      Aquisição
+                      {sortField === 'dataAquisicaoStr' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3 px-4">Deprec. Acumulada</th>
-                  <th className="py-3 px-4">Valor Residual</th>
+                  <th 
+                    onClick={() => handleSort('valorResidual')}
+                    className="py-3 px-4 cursor-pointer hover:text-slate-700 dark:hover:text-slate-350 select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-1">
+                      Valor Residual
+                      {sortField === 'valorResidual' && (
+                        sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3 px-4">Situação</th>
                   <th className="py-3 px-4 text-center">Ações</th>
                 </tr>
@@ -304,7 +399,7 @@ export default function AtivosView() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-850 text-xs">
                 {filteredRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-slate-450 dark:text-slate-500">
+                    <td colSpan={11} className="py-8 text-center text-slate-450 dark:text-slate-500">
                       Nenhum ativo patrimonial encontrado correspondente aos filtros.
                     </td>
                   </tr>
@@ -340,10 +435,14 @@ export default function AtivosView() {
                         <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{r.modeloReferencia || '—'}</div>
                       </td>
 
-                      {/* Valor / Data */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-semibold text-slate-850 dark:text-slate-200">{formatCurrency(r.valorAquisicao)}</div>
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{r.dataAquisicaoStr ? formatDateBr(r.dataAquisicaoStr) : '—'}</div>
+                      {/* Valor Compra */}
+                      <td className="py-3.5 px-4 whitespace-nowrap font-semibold text-slate-850 dark:text-slate-200">
+                        {formatCurrency(r.valorAquisicao)}
+                      </td>
+
+                      {/* Data Aquisição */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-700 dark:text-slate-350">
+                        {r.dataAquisicaoStr ? formatDateBr(r.dataAquisicaoStr) : '—'}
                       </td>
 
                       {/* Depreciação Acumulada */}
