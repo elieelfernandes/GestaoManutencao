@@ -43,3 +43,43 @@ export interface MasterLookupData {
   types: string[];
   priorities: string[];
 }
+
+export type AssetCategory = 
+  | 'Máquinas e Equipamentos'
+  | 'Veículos'
+  | 'Tecnologia da Informação'
+  | 'Móveis e Utensílios'
+  | 'Instrumentos de Medição'
+  | 'Segurança'
+  | 'Infraestrutura'
+  | 'Outros';
+
+export type AssetConservation = 'Ótimo' | 'Bom' | 'Regular' | 'Ruim' | 'Inservível';
+
+export type AssetSituation = 'Ativo' | 'Em Manutenção' | 'Baixado' | 'Alienado' | 'Extraviado';
+
+export interface AssetRecord {
+  id: number;
+  numeroPatrimonio: string;
+  descricao: string;
+  categoria: AssetCategory;
+  setorId: number | null;
+  setorNome?: string;
+  responsavelId: number | null;
+  responsavelNome?: string;
+  marcaFabricante: string | null;
+  modeloReferencia: string | null;
+  dataAquisicaoStr: string | null; // YYYY-MM-DD
+  valorAquisicao: number | null;
+  estadoConservacao: AssetConservation | null;
+  situacao: AssetSituation;
+  numeroNotaFiscal: string | null;
+  fornecedor: string | null;
+  vidaUtilAnos: number | null;
+  depreciacaoAnualPct: number | null;
+  observacoes: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  depreciacaoAcumulada?: number;
+  valorResidual?: number;
+}

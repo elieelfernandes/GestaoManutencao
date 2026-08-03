@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { LayoutDashboard, ClipboardList, Settings, Wrench, ChevronRight, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Settings, Wrench, ChevronRight, Sun, Moon, Package } from 'lucide-react';
 import { useTheme } from '../utils/ThemeContext';
 
-export type NavTab = 'dashboard' | 'ordens' | 'cadastros';
+export type NavTab = 'dashboard' | 'ordens' | 'cadastros' | 'ativos';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -32,6 +32,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       label: 'Cadastros Mestre',
       subtitle: 'Técnicos, Setores e Áreas',
       icon: Settings
+    },
+    {
+      id: 'ativos' as NavTab,
+      label: 'Ativos Patrimoniais',
+      subtitle: 'Cadastro e Depreciação',
+      icon: Package
     }
   ];
 

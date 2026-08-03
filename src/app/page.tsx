@@ -5,6 +5,7 @@ import Sidebar, { NavTab } from '../components/Sidebar';
 import DashboardView from '../components/DashboardView';
 import OrdensView from '../components/OrdensView';
 import CadastrosView from '../components/CadastrosView';
+import AtivosView from '../components/AtivosView';
 import { useTheme } from '../utils/ThemeContext';
 
 export default function Home() {
@@ -22,6 +23,7 @@ export default function Home() {
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'ordens' && <OrdensView />}
         {activeTab === 'cadastros' && <CadastrosView />}
+        {activeTab === 'ativos' && <AtivosView />}
       </main>
 
     </div>
