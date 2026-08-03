@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert, ChevronUp, ChevronDown } from 'lucide-react';
+import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert, ChevronUp, ChevronDown, Download } from 'lucide-react';
 import { AssetRecord, AssetCategory, AssetSituation } from '../types';
 import CreateAtivoModal from './CreateAtivoModal';
 import EditAtivoModal from './EditAtivoModal';
 import { formatDateBr } from '../utils/helpers';
+import * as XLSX from 'xlsx';
 
 interface FilterState {
   categoria: string;
@@ -100,6 +101,56 @@ export default function AtivosView() {
       situacao: '',
       search: ''
     });
+  };
+
+  const handleExportExcel = () => {
+    if (filteredRecords.length === 0) return;
+
+    const dataToExport = filteredRecords.map(r => ({
+      'Número Patrimônio': r.numeroPatrimonio,
+      'Descrição': r.descricao,
+      'Categoria': r.categoria,
+      'Setor': r.setorNome || '—',
+      'Responsável': r.responsavelNome || '—',
+      'Marca/Fabricante': r.marcaFabricante || '—',
+      'Modelo/Referência': r.modeloReferencia || '—',
+      'Data de Aquisição': r.dataAquisicaoStr ? formatDateBr(r.dataAquisicaoStr) : '—',
+      'Valor de Aquisição': r.valorAquisicao !== null ? formatCurrency(r.valorAquisicao) : '—',
+      'Estado de Conservação': r.estadoConservacao || '—',
+      'Situação': r.situacao,
+      'Depreciação Acumulada': formatCurrency(r.depreciacaoAcumulada || 0),
+      'Valor Residual': formatCurrency(r.valorResidual !== undefined ? r.valorResidual : r.valorAquisicao),
+      'Número da Nota Fiscal': r.numeroNotaFiscal || '—',
+      'Fornecedor': r.fornecedor || '—',
+      'Vida Útil (Anos)': r.vidaUtilAnos !== null ? r.vidaUtilAnos : '—',
+      'Depreciação Anual (%)': r.depreciacaoAnualPct !== null ? `${r.depreciacaoAnualPct}%` : '—',
+      'Observações': r.observacoes || '—'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Ativos Patrimoniais');
+
+    // Auto-fit column widths
+    const maxLengths = dataToExport.reduce((acc, row) => {
+      Object.keys(row).forEach(key => {
+        const val = String(row[key as keyof typeof row]);
+        acc[key] = Math.max(acc[key] || key.length, val.length);
+      });
+      return acc;
+    }, {} as { [key: string]: number });
+
+    worksheet['!cols'] = Object.keys(maxLengths).map(key => ({
+      wch: maxLengths[key] + 3
+    }));
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const fileName = `Marilux_Ativos_Patrimoniais_${year}-${month}-${day}.xlsx`;
+
+    XLSX.writeFile(workbook, fileName);
   };
 
   const handleSort = (field: SortField) => {
@@ -213,6 +264,15 @@ export default function AtivosView() {
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-blue-400' : ''}`} />
             Atualizar Ativos
+          </button>
+
+          <button
+            onClick={handleExportExcel}
+            disabled={isLoading || filteredRecords.length === 0}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm hover:shadow active:scale-98 transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            Exportar Excel
           </button>
 
           <button
