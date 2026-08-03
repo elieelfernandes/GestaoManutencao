@@ -120,7 +120,7 @@ export async function POST(request: Request) {
 
     // 1. Generate sequential number using regex extraction over existing records
     const maxPatrimonioResult = await sql`
-      SELECT MAX(CAST(SUBSTRING(numero_patrimonio FROM 'MAR-(\d+)') AS INTEGER)) AS max_num 
+      SELECT MAX(CAST(SUBSTRING(numero_patrimonio FROM 'MAR-([0-9]+)') AS INTEGER)) AS max_num 
       FROM ativos_patrimoniais 
       WHERE numero_patrimonio LIKE 'MAR-%'
     `;

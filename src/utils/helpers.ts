@@ -39,3 +39,18 @@ export function formatDateBr(dateStr?: string | null): string {
   return dateStr;
 }
 
+// Regex sequence extraction helper (equivalent to SQL Regex logic)
+export function extractPatrimonioNumber(code: string | null | undefined): number | null {
+  if (!code) return null;
+  const match = code.match(/MAR-([0-9]+)/);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+  return null;
+}
+
+// Code generator helper
+export function generatePatrimonioCode(num: number): string {
+  return `MAR-${String(num).padStart(3, '0')}`;
+}
+

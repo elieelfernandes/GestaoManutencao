@@ -1,5 +1,11 @@
 import assert from 'assert';
-import { normalizeText, mapUiStatusToDb, mapDbStatusToUi } from '../utils/helpers';
+import { 
+  normalizeText, 
+  mapUiStatusToDb, 
+  mapDbStatusToUi,
+  extractPatrimonioNumber,
+  generatePatrimonioCode
+} from '../utils/helpers';
 
 console.log('=== MARILUX CMMS - EXECUTANDO TESTES UNITÁRIOS ===\n');
 
@@ -38,6 +44,26 @@ try {
   assert.strictEqual(mapDbStatusToUi(''), 'Não iniciado');
   assert.strictEqual(mapDbStatusToUi(null as any), 'Não iniciado');
   console.log('✓ mapDbStatusToUi passou!');
+
+  // Test 4: Patrimonio generation and extraction
+  console.log('\nTestando: extractPatrimonioNumber e generatePatrimonioCode...');
+  assert.strictEqual(extractPatrimonioNumber('MAR-001'), 1);
+  assert.strictEqual(extractPatrimonioNumber('MAR-012'), 12);
+  assert.strictEqual(extractPatrimonioNumber('MAR-999'), 999);
+  assert.strictEqual(extractPatrimonioNumber('MAR-invalid'), null);
+  assert.strictEqual(extractPatrimonioNumber(null), null);
+  
+  assert.strictEqual(generatePatrimonioCode(1), 'MAR-001');
+  assert.strictEqual(generatePatrimonioCode(12), 'MAR-012');
+  assert.strictEqual(generatePatrimonioCode(105), 'MAR-105');
+
+  // Test simulation of max regex sequence logic
+  const existingCodes = ['MAR-001', 'MAR-003', 'MAR-002'];
+  const numbers = existingCodes.map(code => extractPatrimonioNumber(code)).filter((n): n is number => n !== null);
+  const maxNum = Math.max(...numbers);
+  const nextCode = generatePatrimonioCode(maxNum + 1);
+  assert.strictEqual(nextCode, 'MAR-004');
+  console.log('✓ extractPatrimonioNumber e generatePatrimonioCode passados!');
 
   console.log('\n🎉 TODOS OS TESTES PASSARAM COM SUCESSO! 🎉');
   process.exit(0);
