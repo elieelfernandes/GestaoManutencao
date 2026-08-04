@@ -41,8 +41,17 @@ export async function GET(
         a.observacoes,
         a.created_at AS "createdAt",
         a.updated_at AS "updatedAt",
-        COALESCE((a.valor_aquisicao * (a.depreciacao_anual_pct / 100.0) * EXTRACT(YEAR FROM AGE(CURRENT_DATE, a.data_aquisicao)))::float, 0.0) AS "depreciacaoAcumulada",
-        GREATEST((COALESCE(a.valor_aquisicao, 0.0) - COALESCE(a.valor_aquisicao * (a.depreciacao_anual_pct / 100.0) * EXTRACT(YEAR FROM AGE(CURRENT_DATE, a.data_aquisicao)), 0.0))::float, 0.0) AS "valorResidual"
+        LEAST(
+          COALESCE((a.valor_aquisicao * (a.depreciacao_anual_pct / 100.0) * EXTRACT(YEAR FROM AGE(CURRENT_DATE, a.data_aquisicao)))::float, 0.0),
+          COALESCE(a.valor_aquisicao::float, 0.0)
+        ) AS "depreciacaoAcumulada",
+        GREATEST(
+          (COALESCE(a.valor_aquisicao, 0.0) - LEAST(
+            COALESCE((a.valor_aquisicao * (a.depreciacao_anual_pct / 100.0) * EXTRACT(YEAR FROM AGE(CURRENT_DATE, a.data_aquisicao)))::float, 0.0),
+            COALESCE(a.valor_aquisicao::float, 0.0)
+          ))::float,
+          0.0
+        ) AS "valorResidual"
       FROM ativos_patrimoniais a
       LEFT JOIN cadastros_setores s ON a.setor_id = s.id
       LEFT JOIN cadastros_tecnicos t ON a.responsavel_id = t.id

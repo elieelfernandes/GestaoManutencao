@@ -1,12 +1,26 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert, ChevronUp, ChevronDown, Download } from 'lucide-react';
+import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert, ChevronUp, ChevronDown, Download, DollarSign, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import { AssetRecord, AssetCategory, AssetSituation } from '../types';
 import CreateAtivoModal from './CreateAtivoModal';
 import EditAtivoModal from './EditAtivoModal';
 import { formatDateBr } from '../utils/helpers';
 import * as XLSX from 'xlsx';
+import { useTheme } from '../utils/ThemeContext';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  CartesianGrid
+} from 'recharts';
 
 interface FilterState {
   categoria: string;
@@ -26,6 +40,13 @@ export default function AtivosView() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const [isMounted, setIsMounted] = useState(false);
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Sorting
   const [sortField, setSortField] = useState<SortField>('dataAquisicaoStr');
@@ -225,6 +246,78 @@ export default function AtivosView() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
+  // KPI Calculations
+  const totalBens = filteredRecords.length;
+  const valorTotalInvestido = filteredRecords.reduce((sum, r) => sum + (r.valorAquisicao || 0), 0);
+  const depreciacaoAcumuladaTotal = filteredRecords.reduce((sum, r) => sum + (r.depreciacaoAcumulada || 0), 0);
+  const valorResidualTotal = filteredRecords.reduce((sum, r) => sum + (r.valorResidual !== undefined ? r.valorResidual : (r.valorAquisicao || 0)), 0);
+
+  // Group by Sector Data for BarChart (Top 10)
+  const chartSectorsData = useMemo(() => {
+    const sectorCounts: Record<string, number> = {};
+    filteredRecords.forEach(r => {
+      const secName = r.setorNome || 'Não alocado';
+      sectorCounts[secName] = (sectorCounts[secName] || 0) + 1;
+    });
+    return Object.keys(sectorCounts)
+      .map(name => ({ name, quantidade: sectorCounts[name] }))
+      .sort((a, b) => b.quantidade - a.quantidade)
+      .slice(0, 10);
+  }, [filteredRecords]);
+
+  // Group by Category Data for PieChart (Invested Value)
+  const chartCategoriesData = useMemo(() => {
+    const categoryValues: Record<string, number> = {};
+    filteredRecords.forEach(r => {
+      if (r.categoria) {
+        categoryValues[r.categoria] = (categoryValues[r.categoria] || 0) + (r.valorAquisicao || 0);
+      }
+    });
+    return Object.keys(categoryValues)
+      .map(name => ({ name, value: categoryValues[name] }))
+      .filter(d => d.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [filteredRecords]);
+
+  const isLight = theme === 'light';
+  const gridStroke = isLight ? '#f1f5f9' : '#1e293b';
+  const labelColor = isLight ? '#475569' : '#64748b';
+  const primaryBarFill = isLight ? '#3b82f6' : '#3b82f6';
+  const areaColors = isLight
+    ? ['#93c5fd', '#86efac', '#fde047', '#c084fc', '#f472b6', '#cbd5e1', '#fdba74']
+    : ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b', '#f97316'];
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-slate-950/95 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs text-slate-800 dark:text-slate-100">
+          <p className="font-bold mb-1">{label}</p>
+          {payload.map((p: any, idx: number) => (
+            <p key={idx} className="font-semibold text-blue-600 dark:text-blue-400">
+              {p.name}: {p.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomTooltipVal = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const entry = payload[0];
+      return (
+        <div className="bg-white dark:bg-slate-950/95 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg text-xs text-slate-800 dark:text-slate-100">
+          <p className="font-bold mb-1">{entry.name}</p>
+          <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+            Valor Investido: {formatCurrency(entry.value)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const getSituationColor = (sit: AssetSituation) => {
     switch (sit) {
       case 'Ativo':
@@ -299,6 +392,127 @@ export default function AtivosView() {
         <div className="bg-emerald-50 border border-emerald-250 rounded-2xl p-4 flex items-start gap-3 text-emerald-800 animate-in fade-in dark:bg-emerald-950/40 dark:border-emerald-900/60 dark:text-emerald-300">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
           <div className="text-xs font-semibold">{successMsg}</div>
+        </div>
+      )}
+
+      {/* KPIs Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total de Bens */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 group shadow-sm border-l-4 border-l-blue-500">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">Total de Bens</span>
+            <div className="p-1.5 bg-blue-50 dark:bg-blue-600/10 rounded-lg text-blue-600 dark:text-blue-400">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl font-extrabold text-slate-800 dark:text-white">{totalBens}</span>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-1">Itens no Patrimônio</div>
+          </div>
+        </div>
+
+        {/* Valor Total Investido */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 group shadow-sm border-l-4 border-l-emerald-500">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">Valor Investido</span>
+            <div className="p-1.5 bg-emerald-50 dark:bg-emerald-600/10 rounded-lg text-emerald-600 dark:text-emerald-400">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl font-extrabold text-slate-800 dark:text-white">{formatCurrency(valorTotalInvestido)}</span>
+            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">Custo Histórico de Compra</div>
+          </div>
+        </div>
+
+        {/* Valor Residual Atual */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 group shadow-sm border-l-4 border-l-indigo-500">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">Valor Residual Atual</span>
+            <div className="p-1.5 bg-indigo-50 dark:bg-indigo-600/10 rounded-lg text-indigo-600 dark:text-indigo-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl font-extrabold text-slate-800 dark:text-white">{formatCurrency(valorResidualTotal)}</span>
+            <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1">Valor Contábil Líquido</div>
+          </div>
+        </div>
+
+        {/* Depreciação Acumulada */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 group shadow-sm border-l-4 border-l-amber-500">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">Depreciação Acumulada</span>
+            <div className="p-1.5 bg-amber-50 dark:bg-amber-600/10 rounded-lg text-amber-600 dark:text-amber-400">
+              <TrendingDown className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-2xl font-extrabold text-slate-800 dark:text-white">{formatCurrency(depreciacaoAcumuladaTotal)}</span>
+            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-1">Perda de Valor Acumulada</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Charts */}
+      {isMounted && filteredRecords.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Chart 1: Bens por Setor */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between min-h-[350px]">
+            <div>
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white tracking-wide uppercase">Bens por Setor Alocado</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Top 10 setores com maior volume físico de ativos</p>
+            </div>
+            <div className="w-full h-64 mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartSectorsData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <XAxis dataKey="name" stroke={labelColor} fontSize={9} tickLine={false} />
+                  <YAxis stroke={labelColor} fontSize={10} tickLine={false} allowDecimals={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="quantidade" name="Bens" fill={primaryBarFill} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Chart 2: Investimento por Categoria */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between min-h-[350px]">
+            <div>
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white tracking-wide uppercase">Investimento por Categoria</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Distribuição do valor de aquisição histórico</p>
+            </div>
+            <div className="w-full h-64 mt-4 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartCategoriesData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {chartCategoriesData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={areaColors[index % areaColors.length]} 
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltipVal />} />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    iconSize={8}
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: '9px', color: isLight ? '#475569' : '#94a3b8' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
 
