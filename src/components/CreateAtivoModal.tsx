@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, X, AlertCircle, Calendar, DollarSign, FileText, Clipboard, User, Tag } from 'lucide-react';
 import { AssetCategory, AssetConservation, AssetSituation } from '../types';
+import { formatCurrencyBRL, parseCurrencyBRL } from '../utils/helpers';
 
 interface CreateAtivoModalProps {
   isOpen: boolean;
@@ -14,6 +15,18 @@ interface CreateAtivoModalProps {
   };
 }
 
+// Official Receita Federal depreciation rates (IN RFB nº 1700/2017)
+const RFB_DEPRECIATION_MAP: Record<AssetCategory, { vidaUtil: number; taxaAnual: number }> = {
+  'Máquinas e Equipamentos': { vidaUtil: 10, taxaAnual: 10 },
+  'Veículos': { vidaUtil: 5, taxaAnual: 20 },
+  'Tecnologia da Informação': { vidaUtil: 5, taxaAnual: 20 },
+  'Móveis e Utensílios': { vidaUtil: 10, taxaAnual: 10 },
+  'Instrumentos de Medição': { vidaUtil: 10, taxaAnual: 10 },
+  'Segurança': { vidaUtil: 10, taxaAnual: 10 },
+  'Infraestrutura': { vidaUtil: 25, taxaAnual: 4 },
+  'Outros': { vidaUtil: 10, taxaAnual: 10 }
+};
+
 export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }: CreateAtivoModalProps) {
   const [formData, setFormData] = useState({
     descricao: '',
@@ -24,12 +37,12 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
     modeloReferencia: '',
     dataAquisicaoStr: '',
     valorAquisicao: '',
-    estadoConservacao: 'Bom' as AssetConservation,
+    estadoConservation: 'Bom' as AssetConservation,
     situacao: 'Ativo' as AssetSituation,
     numeroNotaFiscal: '',
     fornecedor: '',
-    vidaUtilAnos: '',
-    depreciacaoAnualPct: '',
+    vidaUtilAnos: '10',
+    depreciacaoAnualPct: '10',
     observacoes: ''
   });
 
@@ -47,12 +60,12 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
         modeloReferencia: '',
         dataAquisicaoStr: '',
         valorAquisicao: '',
-        estadoConservacao: 'Bom',
+        estadoConservation: 'Bom',
         situacao: 'Ativo',
         numeroNotaFiscal: '',
         fornecedor: '',
-        vidaUtilAnos: '',
-        depreciacaoAnualPct: '',
+        vidaUtilAnos: '10',
+        depreciacaoAnualPct: '10',
         observacoes: ''
       });
       setErrorMsg(null);
@@ -60,6 +73,17 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // Handle category change and auto-fill RFB guidelines
+  const handleCategoryChange = (cat: AssetCategory) => {
+    const defaults = RFB_DEPRECIATION_MAP[cat];
+    setFormData(prev => ({
+      ...prev,
+      categoria: cat,
+      vidaUtilAnos: String(defaults.vidaUtil),
+      depreciacaoAnualPct: String(defaults.taxaAnual)
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,19 +107,21 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
 
     try {
       const payload = {
-        ...formData,
         descricao: formData.descricao.trim(),
+        categoria: formData.categoria,
         setorId: formData.setorId !== '' ? Number(formData.setorId) : null,
         responsavelId: formData.responsavelId !== '' ? Number(formData.responsavelId) : null,
-        valorAquisicao: formData.valorAquisicao !== '' ? Number(formData.valorAquisicao) : null,
-        vidaUtilAnos: formData.vidaUtilAnos !== '' ? Number(formData.vidaUtilAnos) : null,
-        depreciacaoAnualPct: formData.depreciacaoAnualPct !== '' ? Number(formData.depreciacaoAnualPct) : null,
         marcaFabricante: formData.marcaFabricante.trim() || null,
         modeloReferencia: formData.modeloReferencia.trim() || null,
+        dataAquisicaoStr: formData.dataAquisicaoStr || null,
+        valorAquisicao: parseCurrencyBRL(formData.valorAquisicao),
+        estadoConservacao: formData.estadoConservation,
+        situacao: formData.situacao,
         numeroNotaFiscal: formData.numeroNotaFiscal.trim() || null,
         fornecedor: formData.fornecedor.trim() || null,
-        observacoes: formData.observacoes.trim() || null,
-        dataAquisicaoStr: formData.dataAquisicaoStr || null
+        vidaUtilAnos: formData.vidaUtilAnos !== '' ? Number(formData.vidaUtilAnos) : null,
+        depreciacaoAnualPct: formData.depreciacaoAnualPct !== '' ? Number(formData.depreciacaoAnualPct) : null,
+        observacoes: formData.observacoes.trim() || null
       };
 
       const res = await fetch('/api/ativos', {
@@ -145,7 +171,7 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-800 dark:text-white">Novo Ativo Patrimonial</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Cadastre um novo item do patrimônio da empresa</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Cadastre um new item do patrimônio da empresa</p>
             </div>
           </div>
           <button 
@@ -194,7 +220,7 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
               </label>
               <select
                 value={formData.categoria}
-                onChange={(e) => setFormData({ ...formData, categoria: e.target.value as AssetCategory })}
+                onChange={(e) => handleCategoryChange(e.target.value as AssetCategory)}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-850 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
                 required
               >
@@ -292,17 +318,16 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
               />
             </div>
 
-            {/* Valor Aquisição */}
+            {/* Valor Aquisição (Com máscara de moeda R$) */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-650 dark:text-slate-300 flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-blue-500" /> Valor de Aquisição (R$)
+                <DollarSign className="w-3.5 h-3.5 text-blue-500" /> Valor de Aquisição
               </label>
               <input 
-                type="number" 
-                step="0.01"
+                type="text" 
                 value={formData.valorAquisicao}
-                placeholder="Ex: 15000.00"
-                onChange={(e) => setFormData({ ...formData, valorAquisicao: e.target.value })}
+                placeholder="R$ 0,00"
+                onChange={(e) => setFormData({ ...formData, valorAquisicao: formatCurrencyBRL(e.target.value) })}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-850 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
               />
             </div>
@@ -311,8 +336,8 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-650 dark:text-slate-300">Estado de Conservação</label>
               <select
-                value={formData.estadoConservacao}
-                onChange={(e) => setFormData({ ...formData, estadoConservacao: e.target.value as AssetConservation })}
+                value={formData.estadoConservation}
+                onChange={(e) => setFormData({ ...formData, estadoConservation: e.target.value as AssetConservation })}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-850 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
               >
                 {conservations.map(cons => (
@@ -356,6 +381,9 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
                 onChange={(e) => setFormData({ ...formData, vidaUtilAnos: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-850 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
               />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">
+                RFB: {RFB_DEPRECIATION_MAP[formData.categoria].vidaUtil} anos sugeridos.
+              </p>
             </div>
 
             {/* Depreciação Anual % */}
@@ -369,6 +397,9 @@ export default function CreateAtivoModal({ isOpen, onClose, onSuccess, lookups }
                 onChange={(e) => setFormData({ ...formData, depreciacaoAnualPct: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-850 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all"
               />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">
+                RFB: {RFB_DEPRECIATION_MAP[formData.categoria].taxaAnual}% ao ano sugeridos.
+              </p>
             </div>
 
             {/* Observações */}

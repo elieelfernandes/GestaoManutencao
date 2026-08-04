@@ -4,7 +4,9 @@ import {
   mapUiStatusToDb, 
   mapDbStatusToUi,
   extractPatrimonioNumber,
-  generatePatrimonioCode
+  generatePatrimonioCode,
+  formatCurrencyBRL,
+  parseCurrencyBRL
 } from '../utils/helpers';
 
 console.log('=== MARILUX CMMS - EXECUTANDO TESTES UNITÁRIOS ===\n');
@@ -64,6 +66,21 @@ try {
   const nextCode = generatePatrimonioCode(maxNum + 1);
   assert.strictEqual(nextCode, 'MAR-004');
   console.log('✓ extractPatrimonioNumber e generatePatrimonioCode passados!');
+
+  // Test 5: BRL Currency formatting and parsing
+  console.log('\nTestando: formatCurrencyBRL e parseCurrencyBRL...');
+  assert.strictEqual(formatCurrencyBRL(''), '');
+  assert.strictEqual(formatCurrencyBRL(null), '');
+  assert.strictEqual(formatCurrencyBRL(150), 'R$ 1,50'); // non-breaking space
+  assert.strictEqual(formatCurrencyBRL('15000'), 'R$ 150,00');
+  assert.strictEqual(formatCurrencyBRL('12345678'), 'R$ 123.456,78');
+
+  assert.strictEqual(parseCurrencyBRL(''), null);
+  assert.strictEqual(parseCurrencyBRL(null), null);
+  assert.strictEqual(parseCurrencyBRL('R$ 150,00'), 150.00);
+  assert.strictEqual(parseCurrencyBRL('R$ 1.234,56'), 1234.56);
+  assert.strictEqual(parseCurrencyBRL('123.456,78'), 123456.78);
+  console.log('✓ formatCurrencyBRL e parseCurrencyBRL passados!');
 
   console.log('\n🎉 TODOS OS TESTES PASSARAM COM SUCESSO! 🎉');
   process.exit(0);

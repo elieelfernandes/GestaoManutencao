@@ -54,3 +54,24 @@ export function generatePatrimonioCode(num: number): string {
   return `MAR-${String(num).padStart(3, '0')}`;
 }
 
+// BRL Currency formatting mask (cents-based formatting e.g. 15000 -> R$ 150,00)
+export function formatCurrencyBRL(value: string | number | null | undefined): string {
+  if (value === undefined || value === null || value === '') return '';
+  // Extract only digits
+  let cleanValue = String(value).replace(/\D/g, '');
+  if (!cleanValue) return '';
+  const cents = parseInt(cleanValue, 10);
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(cents / 100);
+}
+
+// Parse BRL currency mask back to a standard numeric float (e.g. R$ 150,00 -> 150)
+export function parseCurrencyBRL(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const cleanValue = value.replace(/\D/g, '');
+  if (!cleanValue) return null;
+  return parseInt(cleanValue, 10) / 100;
+}
+
