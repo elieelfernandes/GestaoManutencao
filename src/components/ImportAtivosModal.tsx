@@ -11,7 +11,9 @@ import {
   AlertTriangle, 
   Trash2,
   FileCheck,
-  RefreshCw
+  RefreshCw,
+  Info,
+  Sparkles
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { AssetCategory, AssetConservation, AssetSituation } from '../types';
@@ -47,6 +49,7 @@ interface ParsedAssetRow {
   vidaUtilAnos?: number | null;
   depreciacaoAnualPct?: number | null;
   observacoes?: string;
+  isAutoSuggested: boolean;
   isValid: boolean;
   errors: string[];
   warnings: string[];
@@ -80,7 +83,7 @@ const VALID_CONSERVATIONS: AssetConservation[] = [
 ];
 
 /**
- * Tabela Oficial da Receita Federal (IN RFB nº 1700/2017, Anexo III)
+ * Tabela de Sugestão Oficial da Receita Federal (IN RFB nº 1700/2017, Anexo III)
  */
 const RFB_DEPRECIATION_MAP: Record<AssetCategory, { vidaUtil: number; taxaAnual: number }> = {
   'Máquinas e Equipamentos': { vidaUtil: 10, taxaAnual: 10 },
@@ -122,6 +125,23 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
         'Vida Útil (Anos)': 10,
         'Depreciação Anual (%)': 10,
         'Observações': 'Garantia estendida de 24 meses'
+      },
+      {
+        'Descrição *': 'Envasadora Automática de Saneantes',
+        'Categoria *': 'Máquinas e Equipamentos',
+        'Setor': 'Produção',
+        'Responsável': 'Segundo',
+        'Marca/Fabricante': 'Zegla',
+        'Modelo/Referência': 'Rotativa 12 Bicos',
+        'Data de Aquisição': '2024-08-20',
+        'Valor de Aquisição': 140000.00,
+        'Estado de Conservação': 'Ótimo',
+        'Situação': 'Ativo',
+        'Número da Nota Fiscal': 'NF-55412',
+        'Fornecedor': 'Zegla Indústria de Máquinas',
+        'Vida Útil (Anos)': 5,
+        'Depreciação Anual (%)': 20,
+        'Observações': 'Uso contínuo em processo químico / envase de cloro (Vida útil reduzida)'
       },
       {
         'Descrição *': 'Notebook Dell Latitude 3420',
@@ -171,7 +191,6 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
   const parseExcelDate = (val: any): string | null => {
     if (!val) return null;
     if (typeof val === 'number') {
-      // Excel serial date format
       const date = new Date(Math.round((val - 25569) * 86400 * 1000));
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
@@ -181,7 +200,6 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
     if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
       return str;
     }
-    // DD/MM/YYYY format
     const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (brMatch) {
       const d = brMatch[1].padStart(2, '0');
@@ -197,7 +215,6 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
     if (val === null || val === undefined || val === '') return null;
     if (typeof val === 'number') return isNaN(val) ? null : val;
     let clean = String(val).replace(/R\$/g, '').trim();
-    // Check format like 1.234,56
     if (clean.includes(',') && clean.includes('.')) {
       clean = clean.replace(/\./g, '').replace(',', '.');
     } else if (clean.includes(',')) {
@@ -234,7 +251,6 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
           const errors: string[] = [];
           const warnings: string[] = [];
 
-          // Find values supporting flexible column headers
           const getField = (keys: string[]) => {
             for (const k of keys) {
               const matchingKey = Object.keys(row).find(
@@ -284,7 +300,7 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
             }
           }
 
-          // 3. Strict Sector Matching (Rule 2: MUST match cadastros_setores if provided)
+          // 3. Strict Sector Matching
           let matchedSectorId: number | null = null;
           if (setorRaw) {
             const foundSector = lookups.sectors.find(
@@ -297,7 +313,7 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
             }
           }
 
-          // 4. Strict Technician/Responsável Matching (Rule 2: MUST match cadastros_tecnicos if provided)
+          // 4. Strict Technician/Responsável Matching
           let matchedResponsavelId: number | null = null;
           if (responsavelRaw) {
             const foundTech = lookups.tecnicos.find(
@@ -351,24 +367,23 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
             errors.push(`Valor de aquisição inválido: "${valorRaw}".`);
           }
 
-          // 9. Depreciation & Useful Life (Auto-suggest RFB defaults if missing)
+          // 9. Depreciation & Useful Life (Suggested RFB defaults if missing)
           let parsedVidaUtil = parseMoney(vidaUtilRaw);
           let parsedDeprecPct = parseMoney(deprecPctRaw);
+          let isAutoSuggested = false;
 
           if (matchedCategory) {
             const rfbDefaults = RFB_DEPRECIATION_MAP[matchedCategory];
-            if (parsedVidaUtil === null) {
-              parsedVidaUtil = rfbDefaults.vidaUtil;
-              warnings.push(`Vida útil preenchida automaticamente via RFB (${rfbDefaults.vidaUtil} anos).`);
-            }
-            if (parsedDeprecPct === null) {
-              parsedDeprecPct = rfbDefaults.taxaAnual;
-              warnings.push(`Depreciação anual preenchida automaticamente via RFB (${rfbDefaults.taxaAnual}% a.a.).`);
+            if (parsedVidaUtil === null || parsedDeprecPct === null) {
+              parsedVidaUtil = parsedVidaUtil !== null ? parsedVidaUtil : rfbDefaults.vidaUtil;
+              parsedDeprecPct = parsedDeprecPct !== null ? parsedDeprecPct : rfbDefaults.taxaAnual;
+              isAutoSuggested = true;
+              warnings.push(`Sugestão RFB aplicada (${rfbDefaults.vidaUtil}a / ${rfbDefaults.taxaAnual}%). Você pode editar na tabela antes de confirmar.`);
             }
           }
 
           return {
-            rowIndex: index + 2, // Excel 1-based index with headers
+            rowIndex: index + 2,
             numeroPatrimonio: patrimonioRaw || undefined,
             descricao: descricaoRaw,
             categoria: matchedCategory,
@@ -387,6 +402,7 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
             vidaUtilAnos: parsedVidaUtil,
             depreciacaoAnualPct: parsedDeprecPct,
             observacoes: obsRaw || undefined,
+            isAutoSuggested,
             isValid: errors.length === 0,
             errors,
             warnings
@@ -399,6 +415,21 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
       }
     };
     reader.readAsBinaryString(file);
+  };
+
+  // Inline update for row depreciation
+  const handleUpdateRowDeprec = (targetRowIndex: number, newVidaUtilStr: string, newDeprecPctStr: string) => {
+    setRows(prev => prev.map(r => {
+      if (r.rowIndex !== targetRowIndex) return r;
+      const vUtil = newVidaUtilStr === '' ? null : parseFloat(newVidaUtilStr);
+      const dPct = newDeprecPctStr === '' ? null : parseFloat(newDeprecPctStr);
+      return {
+        ...r,
+        vidaUtilAnos: isNaN(Number(vUtil)) ? r.vidaUtilAnos : vUtil,
+        depreciacaoAnualPct: isNaN(Number(dPct)) ? r.depreciacaoAnualPct : dPct,
+        isAutoSuggested: false
+      };
+    }));
   };
 
   const validRows = rows.filter(r => r.isValid);
@@ -467,7 +498,7 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 dark:bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-5xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh] space-y-5">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-6xl w-full p-6 shadow-2xl flex flex-col max-h-[90vh] space-y-5">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -539,7 +570,16 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
           </div>
         ) : (
           /* Preview Section */
-          <div className="space-y-4 flex-1 flex flex-col min-h-0">
+          <div className="space-y-3 flex-1 flex flex-col min-h-0">
+            {/* Information Callout: Industry Chemical & RFB Guidance */}
+            <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3 flex items-start gap-2.5 text-amber-900 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-300 text-xs">
+              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <span className="font-bold">Sugestão Fiscal da Receita Federal (RFB):</span> As taxas e vida útil ausentes na planilha foram preenchidas como sugestão editável. 
+                Para máquinas de processo químico corrosivo ou turnos contínuos (24h), você pode alterar a vida útil de <strong>10 anos (10%)</strong> para <strong>5 anos (20%)</strong> diretamente nas células de depreciação abaixo antes de confirmar.
+              </div>
+            </div>
+
             {/* Summary & Filters Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-850">
               <div className="flex items-center gap-2 text-xs">
@@ -606,18 +646,18 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
             )}
 
             {/* Table Area */}
-            <div className="flex-1 overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 min-h-[220px]">
+            <div className="flex-1 overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 min-h-[240px]">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-850 sticky top-0 z-10">
-                    <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] w-14">Linha</th>
-                    <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] w-24">Status</th>
+                    <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] w-12">Linha</th>
+                    <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] w-20">Status</th>
                     <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px]">Descrição</th>
                     <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px]">Categoria</th>
                     <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px]">Setor</th>
                     <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px]">Responsável</th>
                     <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px]">Valor</th>
-                    <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px]">Deprec.</th>
+                    <th className="px-3 py-2.5 font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] w-48">Vida Útil / Deprec.</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-850 bg-white dark:bg-slate-900">
@@ -628,9 +668,9 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
                       </td>
                     </tr>
                   ) : (
-                    displayedRows.map((r, idx) => (
+                    displayedRows.map((r) => (
                       <tr 
-                        key={idx}
+                        key={r.rowIndex}
                         className={`hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition-colors ${
                           !r.isValid ? 'bg-red-50/30 dark:bg-red-950/10' : ''
                         }`}
@@ -647,8 +687,8 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2 font-bold text-slate-800 dark:text-slate-100">
-                          <div>{r.descricao || <span className="text-red-500 italic">Vazia</span>}</div>
+                        <td className="px-3 py-2 font-bold text-slate-800 dark:text-slate-100 max-w-[200px]">
+                          <div className="truncate" title={r.descricao}>{r.descricao || <span className="text-red-500 italic">Vazia</span>}</div>
                           {r.errors.length > 0 && (
                             <div className="text-[10px] text-red-600 dark:text-red-400 mt-0.5 font-normal">
                               {r.errors.join(' • ')}
@@ -683,8 +723,53 @@ export default function ImportAtivosModal({ isOpen, onClose, onSuccess, lookups 
                         <td className="px-3 py-2 font-mono text-slate-700 dark:text-slate-300 font-semibold">
                           {formatCurrency(r.valorAquisicao)}
                         </td>
-                        <td className="px-3 py-2 text-slate-500 text-[11px]">
-                          {r.vidaUtilAnos ? `${r.vidaUtilAnos}a (${r.depreciacaoAnualPct}%)` : '—'}
+                        {/* Editable Depreciation Inputs */}
+                        <td className="px-3 py-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-1.5 py-0.5">
+                              <input 
+                                type="number"
+                                step="1"
+                                min="1"
+                                max="100"
+                                value={r.vidaUtilAnos ?? ''}
+                                onChange={(e) => {
+                                  const vu = e.target.value;
+                                  const tax = vu && Number(vu) > 0 ? (100 / Number(vu)).toFixed(1) : '';
+                                  handleUpdateRowDeprec(r.rowIndex, vu, tax);
+                                }}
+                                className="w-10 bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold outline-none text-center"
+                                title="Vida Útil em Anos (Clique para editar)"
+                              />
+                              <span className="text-[10px] text-slate-400">anos</span>
+                            </div>
+
+                            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-1.5 py-0.5">
+                              <input 
+                                type="number"
+                                step="0.1"
+                                min="0.1"
+                                max="100"
+                                value={r.depreciacaoAnualPct ?? ''}
+                                onChange={(e) => {
+                                  const tax = e.target.value;
+                                  handleUpdateRowDeprec(r.rowIndex, String(r.vidaUtilAnos ?? ''), tax);
+                                }}
+                                className="w-10 bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold outline-none text-center"
+                                title="Taxa Anual % (Clique para editar)"
+                              />
+                              <span className="text-[10px] text-slate-400">%</span>
+                            </div>
+
+                            {r.isAutoSuggested && (
+                              <span 
+                                className="p-1 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 rounded-md"
+                                title="Sugestão automática da Receita Federal (editável antes de salvar)"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
