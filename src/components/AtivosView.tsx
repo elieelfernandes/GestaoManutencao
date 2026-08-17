@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert, ChevronUp, ChevronDown, Download, DollarSign, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { Package, Plus, RefreshCw, AlertCircle, CheckCircle2, Search, RotateCcw, Edit2, Trash2, Calendar, ShieldAlert, ChevronUp, ChevronDown, Download, DollarSign, TrendingUp, TrendingDown, BarChart3, Upload } from 'lucide-react';
 import { AssetRecord, AssetCategory, AssetSituation } from '../types';
 import CreateAtivoModal from './CreateAtivoModal';
 import EditAtivoModal from './EditAtivoModal';
+import ImportAtivosModal from './ImportAtivosModal';
 import { formatDateBr } from '../utils/helpers';
 import * as XLSX from 'xlsx';
 import { useTheme } from '../utils/ThemeContext';
@@ -54,6 +55,7 @@ export default function AtivosView() {
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AssetRecord | null>(null);
 
   // Filters state
@@ -362,10 +364,18 @@ export default function AtivosView() {
           <button
             onClick={handleExportExcel}
             disabled={isLoading || filteredRecords.length === 0}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm hover:shadow active:scale-98 transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 text-slate-700 dark:text-slate-300 font-bold text-xs py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow active:scale-98 transition-all cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             Exportar Excel
+          </button>
+
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm hover:shadow active:scale-98 transition-all cursor-pointer"
+          >
+            <Upload className="w-4 h-4" />
+            Importar Excel
           </button>
 
           <button
@@ -776,6 +786,13 @@ export default function AtivosView() {
         isOpen={!!editingRecord}
         record={editingRecord}
         onClose={() => setEditingRecord(null)}
+        onSuccess={fetchData}
+        lookups={{ sectors, tecnicos }}
+      />
+
+      <ImportAtivosModal 
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
         onSuccess={fetchData}
         lookups={{ sectors, tecnicos }}
       />
