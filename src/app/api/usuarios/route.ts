@@ -127,6 +127,20 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID do usuário é obrigatório.' }, { status: 400 });
     }
 
+    // Protection rule: elieel.fernandes@gmail.com is untouchable by any other user/admin
+    const targetUsers = await sql`
+      SELECT id, login, email FROM usuarios_sistema WHERE id = ${id}
+    `;
+    if (targetUsers.length > 0) {
+      const target = targetUsers[0];
+      const isMasterAdmin = target.login === 'elieel.fernandes@gmail.com' || target.email === 'elieel.fernandes@gmail.com';
+      if (isMasterAdmin && session.login !== 'elieel.fernandes@gmail.com') {
+        return NextResponse.json({ 
+          error: 'A conta do Administrador Master (Eliel Fernandes) é intocável e só pode ser alterada por ele mesmo.' 
+        }, { status: 403 });
+      }
+    }
+
     const cleanEmail = email && String(email).trim() !== '' ? String(email).trim().toLowerCase() : null;
 
     if (resetPassword) {
