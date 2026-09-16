@@ -1,115 +1,131 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getPaginationRowModel,
-  flexRender,
-  createColumnHelper,
-  SortingState,
-  ColumnDef
-} from '@tanstack/react-table';
 import { 
-  ChevronDown, 
+  createColumnHelper, 
+  flexRender, 
+  getCoreRowModel, 
+  useReactTable,
+  getSortedRowModel,
+  SortingState,
+  getPaginationRowModel
+} from '@tanstack/react-table';
+import { MaintenanceRecord } from '../types';
+import { 
+  ArrowUpDown, 
   ChevronUp, 
-  ChevronsUpDown, 
+  ChevronDown, 
+  Edit2, 
+  Trash2, 
   Download, 
   Search,
   ArrowLeft,
   ArrowRight,
-  Edit2,
-  Trash2
+  History
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { MaintenanceRecord } from '../types';
-import StatusBadge from './StatusBadge';
 import { formatDateBr } from '../utils/helpers';
 
 interface AnalyticalTableProps {
   records: MaintenanceRecord[];
   onEditOS?: (record: MaintenanceRecord) => void;
-  onDeleteOS?: (id: string) => void;
+  onDeleteOS?: (record: MaintenanceRecord) => void;
+  onViewAudit?: (record: MaintenanceRecord) => void;
 }
 
 const columnHelper = createColumnHelper<MaintenanceRecord>();
 
-export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: AnalyticalTableProps) {
+export default function AnalyticalTable({ records, onEditOS, onDeleteOS, onViewAudit }: AnalyticalTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalSearch, setGlobalSearch] = useState('');
 
-  // Define base table columns
-  const baseColumns: ColumnDef<MaintenanceRecord, any>[] = [
-    columnHelper.accessor('dataSolicitacaoStr', {
-      header: 'Data',
-      cell: info => <span className="font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDateBr(info.getValue())}</span>
-    }),
-    columnHelper.accessor('setor', {
-      header: 'Setor',
-      cell: info => <span className="font-semibold text-slate-800 dark:text-white whitespace-nowrap">{info.getValue() || '—'}</span>
-    }),
-    columnHelper.accessor('descricao', {
-      header: 'Descrição do Serviço',
-      cell: info => (
-        <div className="max-w-[280px] truncate text-slate-700 dark:text-slate-300 font-medium" title={info.getValue()}>
-          {info.getValue() || '—'}
-        </div>
-      )
-    }),
-    columnHelper.accessor('tipoManutencao', {
-      header: 'Tipo',
-      cell: info => {
-        const val = info.getValue();
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/20 whitespace-nowrap">
-            {val}
-          </span>
-        );
-      }
-    }),
-    columnHelper.accessor('responsavel', {
-      header: 'Responsável',
-      cell: info => <span className="text-amber-700 dark:text-amber-400 font-semibold whitespace-nowrap">{info.getValue() || '—'}</span>
-    }),
-    columnHelper.accessor('prioridade', {
-      header: 'Prioridade',
-      cell: info => {
-        const val = info.getValue();
-        let colorClass = 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
-        if (val === 'Alta') colorClass = 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/30';
-        if (val === 'Média') colorClass = 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/30';
-        if (val === 'Baixa') colorClass = 'bg-cyan-50 text-cyan-800 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-400 dark:border-cyan-800/30';
-        return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${colorClass} whitespace-nowrap`}>
-            {val}
-          </span>
-        );
-      }
-    }),
-    columnHelper.accessor('areaTecnica', {
-      header: 'Área Técnica',
-      cell: info => <span className="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{info.getValue() || '—'}</span>
-    }),
-    columnHelper.accessor('status', {
-      header: 'Status',
-      cell: info => <StatusBadge status={info.getValue()} className="whitespace-nowrap" />
-    }),
-    columnHelper.accessor('observacao', {
-      header: 'Observação',
-      cell: info => (
-        <div className="max-w-[150px] truncate text-slate-450 dark:text-slate-500 text-xs italic" title={info.getValue()}>
-          {info.getValue() || '—'}
-        </div>
-      )
-    })
-  ];
-
-  // Dynamically append actions column only if callbacks exist
   const columns = React.useMemo(() => {
-    const cols = [...baseColumns];
-    if (onEditOS || onDeleteOS) {
-      cols.push(
+    const baseColumns: any[] = [
+      columnHelper.accessor('dataSolicitacaoStr', {
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors cursor-pointer text-xs"
+          >
+            Data OS
+            {column.getIsSorted() === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : 
+             column.getIsSorted() === 'desc' ? <ChevronDown className="w-3.5 h-3.5" /> : 
+             <ArrowUpDown className="w-3 h-3 text-slate-400 opacity-50" />}
+          </button>
+        ),
+        cell: info => <span className="font-mono text-slate-700 dark:text-slate-300 text-xs">{formatDateBr(info.getValue())}</span>,
+      }),
+      columnHelper.accessor('horaSolicitacao', {
+        header: 'Hora',
+        cell: info => <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">{info.getValue() || '—'}</span>,
+      }),
+      columnHelper.accessor('setor', {
+        header: 'Setor Solicitante',
+        cell: info => <span className="font-semibold text-slate-800 dark:text-slate-100 text-xs">{info.getValue()}</span>,
+      }),
+      columnHelper.accessor('descricao', {
+        header: 'Descrição do Serviço',
+        cell: info => (
+          <div className="max-w-[280px] truncate text-slate-700 dark:text-slate-200 text-xs" title={info.getValue()}>
+            {info.getValue()}
+          </div>
+        ),
+      }),
+      columnHelper.accessor('tipoManutencao', {
+        header: 'Tipo',
+        cell: info => (
+          <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            {info.getValue()}
+          </span>
+        ),
+      }),
+      columnHelper.accessor('responsavel', {
+        header: 'Responsável',
+        cell: info => <span className="text-slate-700 dark:text-slate-300 font-medium text-xs">{info.getValue()}</span>,
+      }),
+      columnHelper.accessor('areaTecnica', {
+        header: 'Área Técnica',
+        cell: info => <span className="text-slate-500 dark:text-slate-400 text-xs">{info.getValue()}</span>,
+      }),
+      columnHelper.accessor('prioridade', {
+        header: 'Prioridade',
+        cell: info => {
+          const val = info.getValue();
+          let color = 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+          if (val === 'Alta') color = 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/40';
+          if (val === 'Média') color = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/40';
+          if (val === 'Baixa') color = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/40';
+          return (
+            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${color}`}>
+              {val}
+            </span>
+          );
+        },
+      }),
+      columnHelper.accessor('status', {
+        header: 'Status',
+        cell: info => {
+          const val = info.getValue();
+          let color = 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+          if (val === 'Concluído') color = 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/30';
+          if (val === 'Em andamento') color = 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/30';
+          if (val === 'Atrasado') color = 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/30';
+          if (val === 'Não iniciado') color = 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/30';
+          return (
+            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${color}`}>
+              {val}
+            </span>
+          );
+        },
+      }),
+      columnHelper.accessor('prazoExecucaoStr', {
+        header: 'Prazo',
+        cell: info => <span className="font-mono text-slate-500 dark:text-slate-400 text-xs">{formatDateBr(info.getValue())}</span>,
+      }),
+    ];
+
+    if (onEditOS || onDeleteOS || onViewAudit) {
+      baseColumns.push(
         columnHelper.display({
           id: 'acoes',
           header: 'Ações',
@@ -117,6 +133,15 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
             const record = row.original;
             return (
               <div className="flex items-center gap-1.5 whitespace-nowrap">
+                {onViewAudit && (
+                  <button
+                    onClick={() => onViewAudit(record)}
+                    className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                    title="Ver Histórico & Auditoria"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 {onEditOS && (
                   <button
                     onClick={() => onEditOS(record)}
@@ -128,11 +153,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
                 )}
                 {onDeleteOS && (
                   <button
-                    onClick={() => {
-                      if (confirm(`Tem certeza que deseja excluir a OS "${record.descricao}"?`)) {
-                        onDeleteOS(record.id);
-                      }
-                    }}
+                    onClick={() => onDeleteOS(record)}
                     className="p-1.5 text-rose-600 dark:text-rose-400 hover:text-white bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-600 rounded-lg border border-rose-200 dark:border-rose-500/20 transition-all cursor-pointer"
                     title="Excluir Ordem de Serviço"
                   >
@@ -145,11 +166,10 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
         })
       );
     }
-    return cols;
-  }, [onEditOS, onDeleteOS]);
+    return baseColumns;
+  }, [onEditOS, onDeleteOS, onViewAudit]);
 
-
-  // Filter records based on global search in description or sector or responsible
+  // Filter records based on global search
   const filteredData = React.useMemo(() => {
     if (!globalSearch) return records;
     const lower = globalSearch.toLowerCase();
@@ -179,7 +199,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
     }
   });
 
-  // Export fully cleaned data back to Excel
+  // Export to Excel
   const handleExportExcel = () => {
     if (filteredData.length === 0) return;
 
@@ -195,10 +215,8 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
       'Início': r.horarioInicio || '—',
       'Término': r.horarioTermino || '—',
       'Status': r.status || '—',
-      'Progresso (%)': (r as any).pctStatus !== undefined ? `${((r as any).pctStatus * 100).toFixed(0)}%` : '—',
       'Setor da Manutenção (Área)': r.areaTecnica || r.setorManutencao || '—',
       'Prazo Execução': formatDateBr(r.prazoExecucaoStr),
-      'Prazo (Dias)': r.prazo || '—',
       'Observação': r.observacao || '—'
     }));
 
@@ -219,7 +237,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
       wch: maxLengths[key] + 3
     }));
 
-    XLSX.writeFile(workbook, 'Marilux_Manutencao_Limpa.xlsx');
+    XLSX.writeFile(workbook, 'Marilux_Manutencao_Ordens.xlsx');
   };
 
   return (
@@ -229,7 +247,7 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-850 pb-4">
         <div>
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-400 tracking-wide uppercase">Tabela Analítica de Atividades</h3>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Listagem unificada de chamados após processos de limpeza</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Listagem unificada de chamados em aberto e finalizados</p>
         </div>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -258,64 +276,58 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
       </div>
 
       {/* Table Area */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-850">
+      <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-850">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id} className="bg-slate-50 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-850">
-                {headerGroup.headers.map(header => {
-                  const sortDir = header.column.getIsSorted();
-                  return (
-                    <th 
-                      key={header.id}
-                      onClick={header.column.getToggleSortingHandler()}
-                      className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider px-4 py-3 select-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-800 dark:hover:text-white transition-colors"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getCanSort() && (
-                          sortDir === 'asc' ? <ChevronUp className="w-3 h-3 text-blue-500" /> :
-                          sortDir === 'desc' ? <ChevronDown className="w-3 h-3 text-blue-500" /> :
-                          <ChevronsUpDown className="w-3 h-3 text-slate-400 dark:text-slate-600" />
+              <tr key={headerGroup.id} className="bg-slate-50/70 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold">
+                {headerGroup.headers.map(header => (
+                  <th key={header.id} className="py-3 px-3.5">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
                         )}
-                      </div>
-                    </th>
-                  );
-                })}
+                  </th>
+                ))}
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-850 bg-white dark:bg-slate-900/40">
-            {table.getRowModel().rows.length > 0 ? (
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="text-center py-10 text-slate-400 text-xs">
+                  Nenhum chamado encontrado.
+                </td>
+              </tr>
+            ) : (
               table.getRowModel().rows.map(row => (
-                <tr key={row.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/25 transition-colors">
+                <tr 
+                  key={row.id} 
+                  className="hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition-colors"
+                >
                   {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="px-4 py-3.5">
+                    <td key={cell.id} className="py-3 px-3.5">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
               ))
-            ) : (
-              <tr>
-                <td colSpan={columns.length} className="text-center py-8 text-slate-500">
-                  Nenhum registro encontrado para a pesquisa.
-                </td>
-              </tr>
             )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-xs text-slate-550 dark:text-slate-500">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-850">
         <div className="flex items-center gap-2">
-          <span>Exibindo de</span>
-          <span className="font-semibold text-slate-700 dark:text-slate-300">
+          <span>Mostrando</span>
+          <span className="font-semibold text-slate-800 dark:text-white">
             {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
           </span>
-          <span>a</span>
-          <span className="font-semibold text-slate-700 dark:text-slate-300">
+          <span>até</span>
+          <span className="font-semibold text-slate-800 dark:text-white">
             {Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
               filteredData.length
@@ -327,7 +339,6 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Row selection dropdown */}
           <div className="flex items-center gap-1.5">
             <span>Exibir</span>
             <select
@@ -345,7 +356,6 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS }: Analy
             </select>
           </div>
 
-          {/* Page buttons */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => table.previousPage()}

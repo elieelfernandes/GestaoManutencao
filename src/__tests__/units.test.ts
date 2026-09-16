@@ -8,6 +8,13 @@ import {
   formatCurrencyBRL,
   parseCurrencyBRL
 } from '../utils/helpers';
+import {
+  hashPassword,
+  verifyPassword,
+  encryptSession,
+  decryptSession,
+  UserSession
+} from '../utils/auth';
 
 console.log('=== MARILUX CMMS - EXECUTANDO TESTES UNITÁRIOS ===\n');
 
@@ -71,7 +78,7 @@ try {
   console.log('\nTestando: formatCurrencyBRL e parseCurrencyBRL...');
   assert.strictEqual(formatCurrencyBRL(''), '');
   assert.strictEqual(formatCurrencyBRL(null), '');
-  assert.strictEqual(formatCurrencyBRL(150), 'R$ 1,50'); // non-breaking space
+  assert.strictEqual(formatCurrencyBRL(150), 'R$ 1,50');
   assert.strictEqual(formatCurrencyBRL('15000'), 'R$ 150,00');
   assert.strictEqual(formatCurrencyBRL('12345678'), 'R$ 123.456,78');
 
@@ -81,6 +88,39 @@ try {
   assert.strictEqual(parseCurrencyBRL('R$ 1.234,56'), 1234.56);
   assert.strictEqual(parseCurrencyBRL('123.456,78'), 123456.78);
   console.log('✓ formatCurrencyBRL e parseCurrencyBRL passados!');
+
+  // Test 6: Auth Hashing & Session Encryption
+  console.log('\nTestando: hashPassword, verifyPassword, encryptSession e decryptSession...');
+  const testPassword = 'Marilux@123';
+  const hashed = hashPassword(testPassword);
+  assert.strictEqual(verifyPassword(testPassword, hashed), true);
+  assert.strictEqual(verifyPassword('SenhaErrada@999', hashed), false);
+
+  const mockSession: UserSession = {
+    id: 1,
+    nome: 'Eliel Fernandes',
+    login: 'elieel.fernandes@gmail.com',
+    email: 'elieel.fernandes@gmail.com',
+    cargo: 'Administrador Geral',
+    perfil: 'ADMIN',
+    status: 'ATIVO',
+    permissoes: { dashboard: true, ordens: true, ativos: true, cadastros: true },
+    precisaTrocarSenha: false,
+    exp: Date.now() + 60000
+  };
+
+  const encryptedToken = encryptSession(mockSession);
+  const decrypted = decryptSession(encryptedToken);
+  assert.ok(decrypted);
+  assert.strictEqual(decrypted?.login, 'elieel.fernandes@gmail.com');
+  assert.strictEqual(decrypted?.perfil, 'ADMIN');
+  assert.strictEqual(decrypted?.permissoes.dashboard, true);
+
+  // Expired token test
+  const expiredSession: UserSession = { ...mockSession, exp: Date.now() - 1000 };
+  const expiredToken = encryptSession(expiredSession);
+  assert.strictEqual(decryptSession(expiredToken), null);
+  console.log('✓ hashPassword, verifyPassword e encryptSession passados!');
 
   console.log('\n🎉 TODOS OS TESTES PASSARAM COM SUCESSO! 🎉');
   process.exit(0);

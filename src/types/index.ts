@@ -10,6 +10,8 @@ export interface MaintenanceRecord {
   descricao: string; // Service description
   tipoManutencao: string; // Maintenance type
   responsavel: string; // Technician name
+  responsavelId?: number | null;
+  responsavelNome?: string;
   areaTecnica: string; // Technical area (Mecânica, Elétrica, etc.)
   prioridade: PriorityType; // Priority
   prazoExecucaoStr: string; // YYYY-MM-DD
@@ -20,6 +22,14 @@ export interface MaintenanceRecord {
   status: StatusType; // Status
   createdAt?: string;
   
+  // Soft Delete fields
+  excluidoEm?: string;
+  excluidoEmFormatado?: string;
+  excluidoPorNome?: string;
+  excluidoPorLogin?: string;
+  motivoExclusao?: string;
+  statusOriginal?: StatusType;
+
   // Optional helpers for date calculations
   data?: Date | null;
   dataExecucao?: Date | null;
@@ -82,4 +92,40 @@ export interface AssetRecord {
   updatedAt?: string;
   depreciacaoAcumulada?: number;
   valorResidual?: number;
+}
+
+// User & Permission Types
+export interface UserPermissions {
+  dashboard: boolean;
+  ordens: boolean;
+  ativos: boolean;
+  cadastros: boolean;
+}
+
+export interface UserRecord {
+  id: number;
+  nome: string;
+  login: string;
+  email: string | null;
+  cargo: string;
+  perfil: 'ADMIN' | 'TECNICO';
+  status: 'ATIVO' | 'BLOQUEADO';
+  permissoes: UserPermissions;
+  precisaTrocarSenha: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Order Audit Log
+export interface AuditRecord {
+  id: number;
+  ordemId: string;
+  usuarioId: number | null;
+  usuarioNome: string;
+  usuarioLogin: string;
+  tipoAcao: 'CRIACAO' | 'ALTERACAO_STATUS' | 'EDICAO' | 'BAIXA' | 'EXCLUSAO';
+  descricaoAcao: string;
+  detalhesAlteracao?: any;
+  dataHoraFormatada: string;
+  createdAt: string;
 }

@@ -1,14 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ClipboardList, Plus, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ClipboardList, Plus, RefreshCw, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { MaintenanceRecord, MasterLookupData } from '../types';
 import FilterPanel, { FilterState } from './FilterPanel';
 import AnalyticalTable from './AnalyticalTable';
 import CreateOSModal from './CreateOSModal';
 import EditOSModal from './EditOSModal';
+import DeleteOSModal from './DeleteOSModal';
+import AuditTimelineModal from './AuditTimelineModal';
+import OrdensExcluidasView from './OrdensExcluidasView';
 
 export default function OrdensView() {
+  const [subTab, setSubTab] = useState<'ativas' | 'excluidas'>('ativas');
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [lookups, setLookups] = useState<MasterLookupData>({
     responsibles: [],
@@ -25,6 +29,8 @@ export default function OrdensView() {
   // Modal States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MaintenanceRecord | null>(null);
+  const [deletingRecord, setDeletingRecord] = useState<MaintenanceRecord | null>(null);
+  const [auditRecord, setAuditRecord] = useState<MaintenanceRecord | null>(null);
 
   // Filter States
   const [filters, setFilters] = useState<FilterState>({
@@ -46,20 +52,27 @@ export default function OrdensView() {
     setErrorMsg(null);
 
     try {
-      // Fetch both in parallel
-      const [resCad, resOrd] = await Promise.all([
+      // Fetch cadastros, active users for responsibles, and ordens
+      const [resCad, resUsers, resOrd] = await Promise.all([
         fetch('/api/cadastros'),
+        fetch('/api/usuarios?mode=select'),
         fetch('/api/ordens')
       ]);
 
-      const [jsonCad, jsonOrd] = await Promise.all([
+      const [jsonCad, jsonUsers, jsonOrd] = await Promise.all([
         resCad.json(),
+        resUsers.json(),
         resOrd.json()
       ]);
 
       if (resCad.ok) {
+        // Prefer active registered users as responsibles, fallback to cadastros_tecnicos
+        const usersList: string[] = jsonUsers.usuarios ? jsonUsers.usuarios.map((u: any) => u.nome) : [];
+        const cadastrosList: string[] = (jsonCad.tecnicos || []).map((t: any) => t.nome);
+        const combinedResponsibles = Array.from(new Set([...usersList, ...cadastrosList]));
+
         setLookups({
-          responsibles: (jsonCad.tecnicos || []).map((t: any) => t.nome),
+          responsibles: combinedResponsibles,
           sectors: (jsonCad.setores || []).map((s: any) => s.nome),
           maintenanceSectors: (jsonCad.areasTecnicas || []).map((at: any) => at.nome),
           types: (jsonCad.tiposManutencao || []).map((tm: any) => tm.nome),
@@ -81,52 +94,21 @@ export default function OrdensView() {
     fetchData();
   }, []);
 
-  // Handle Delete OS (DELETE)
-  const handleDeleteOS = async (id: string) => {
-    if (!confirm('Deseja realmente excluir esta Ordem de Serviço?')) return;
-
-    setErrorMsg(null);
-    setSuccessMsg(null);
-
-    try {
-      const res = await fetch(`/api/ordens?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE'
-      });
-      const json = await res.json();
-
-      if (!res.ok) throw new Error(json.error || 'Erro ao excluir Ordem de Serviço');
-
-      setSuccessMsg('Ordem de Serviço excluída com sucesso.');
-      fetchData();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao excluir Ordem de Serviço.');
-    }
-  };
-
   // Filter records dynamically
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
-      // Date start filter
       if (filters.startDate && r.dataSolicitacaoStr) {
         if (r.dataSolicitacaoStr < filters.startDate) return false;
       }
-      // Date end filter
       if (filters.endDate && r.dataSolicitacaoStr) {
         if (r.dataSolicitacaoStr > filters.endDate) return false;
       }
-      // Sector filter
       if (filters.sector && r.setor !== filters.sector) return false;
-      // Status filter
       if (filters.status && r.status !== filters.status) return false;
-      // Maintenance Type filter
       if (filters.type && r.tipoManutencao !== filters.type) return false;
-      // Priority filter
       if (filters.priority && r.prioridade !== filters.priority) return false;
-      // Responsible filter
       if (filters.responsible && r.responsavel !== filters.responsible) return false;
-      // Area Tecnica filter
       if (filters.maintSector && r.areaTecnica !== filters.maintSector) return false;
-      // Search
       if (filters.search) {
         const q = filters.search.toLowerCase().trim();
         const descMatch = r.descricao ? r.descricao.toLowerCase().includes(q) : false;
@@ -139,16 +121,16 @@ export default function OrdensView() {
   }, [records, filters]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-900 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-850 pb-6">
         <div>
           <h2 className="text-xl font-extrabold text-slate-800 dark:text-white tracking-wide flex items-center gap-2">
-            <ClipboardList className="w-6 h-6 text-blue-500" /> ÁREA 2 — Ordens de Serviço
+            <ClipboardList className="w-6 h-6 text-blue-500" /> Ordens de Serviço
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Abra novos chamados de manutenção, aplique filtros combinados e dê baixa com horários e pareceres.
+            Abra novos chamados de manutenção, acompanhe auditorias e dê baixa com horários e pareceres técnicos.
           </p>
         </div>
 
@@ -171,6 +153,33 @@ export default function OrdensView() {
         </div>
       </div>
 
+      {/* Sub-tabs: Ordens Ativas vs Ordens Excluídas */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <button
+          onClick={() => setSubTab('ativas')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            subTab === 'ativas'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800'
+          }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          Ordens Ativas ({records.length})
+        </button>
+
+        <button
+          onClick={() => setSubTab('excluidas')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            subTab === 'excluidas'
+              ? 'bg-rose-600 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 border border-slate-200 dark:border-slate-800'
+          }`}
+        >
+          <Trash2 className="w-4 h-4" />
+          Ordens Excluídas
+        </button>
+      </div>
+
       {/* Alert Banners */}
       {errorMsg && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3 text-red-800 animate-in fade-in dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300">
@@ -189,27 +198,32 @@ export default function OrdensView() {
         </div>
       )}
 
-      {/* 1. Filter Panel & OS Table */}
-      {isLoading ? (
-        <div className="h-[40vh] w-full flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-sm">
-          <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Carregando Ordens de Serviço...</span>
-        </div>
+      {/* Tab Content */}
+      {subTab === 'excluidas' ? (
+        <OrdensExcluidasView />
       ) : (
-        <>
-          <FilterPanel 
-            filters={filters} 
-            setFilters={setFilters} 
-            lookups={lookups}
-            records={records}
-          />
+        isLoading ? (
+          <div className="h-[40vh] w-full flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-900 rounded-3xl p-8 shadow-sm">
+            <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">Carregando Ordens de Serviço...</span>
+          </div>
+        ) : (
+          <>
+            <FilterPanel 
+              filters={filters} 
+              setFilters={setFilters} 
+              lookups={lookups}
+              records={records}
+            />
 
-          <AnalyticalTable 
-            records={filteredRecords}
-            onEditOS={(rec) => setEditingRecord(rec)}
-            onDeleteOS={handleDeleteOS}
-          />
-        </>
+            <AnalyticalTable 
+              records={filteredRecords}
+              onEditOS={(rec) => setEditingRecord(rec)}
+              onDeleteOS={(rec) => setDeletingRecord(rec)}
+              onViewAudit={(rec) => setAuditRecord(rec)}
+            />
+          </>
+        )
       )}
 
       {/* Modal Dialogs */}
@@ -226,6 +240,25 @@ export default function OrdensView() {
         onClose={() => setEditingRecord(null)}
         onSuccess={fetchData}
         lookups={lookups}
+      />
+
+      {/* Mandatory Reason Delete Modal */}
+      <DeleteOSModal
+        isOpen={!!deletingRecord}
+        order={deletingRecord}
+        onClose={() => setDeletingRecord(null)}
+        onSuccess={() => {
+          setSuccessMsg('Ordem de serviço excluída com sucesso.');
+          fetchData();
+          setTimeout(() => setSuccessMsg(null), 3500);
+        }}
+      />
+
+      {/* Audit Timeline Modal */}
+      <AuditTimelineModal
+        isOpen={!!auditRecord}
+        order={auditRecord}
+        onClose={() => setAuditRecord(null)}
       />
 
     </div>
