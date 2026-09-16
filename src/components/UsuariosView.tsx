@@ -410,7 +410,7 @@ export default function UsuariosView() {
                     required
                     value={formNome}
                     onChange={(e) => setFormNome(e.target.value)}
-                    placeholder="ex: Carlos Silva"
+                    placeholder="Nome completo do colaborador"
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -422,7 +422,7 @@ export default function UsuariosView() {
                     required
                     value={formLogin}
                     onChange={(e) => setFormLogin(e.target.value)}
-                    placeholder="ex: carlos.silva"
+                    placeholder="Login de acesso (exclusivo)"
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -433,7 +433,7 @@ export default function UsuariosView() {
                     type="email"
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
-                    placeholder="ex: carlos@gmail.com"
+                    placeholder="E-mail corporativo ou pessoal"
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -444,7 +444,7 @@ export default function UsuariosView() {
                     type="text"
                     value={formCargo}
                     onChange={(e) => setFormCargo(e.target.value)}
-                    placeholder="ex: Técnico Mecânico"
+                    placeholder="Cargo ou função do usuário"
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>

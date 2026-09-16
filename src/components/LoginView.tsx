@@ -209,7 +209,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                   type="text"
                   value={loginInput}
                   onChange={(e) => setLoginInput(e.target.value)}
-                  placeholder="ex: cristian ou admin@marilux.com.br"
+                  placeholder="Digite seu usuário ou e-mail"
                   autoComplete="username"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-medium"
                 />
