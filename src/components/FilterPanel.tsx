@@ -3,17 +3,18 @@
 import React from 'react';
 import { Filter, RotateCcw, Calendar, Search } from 'lucide-react';
 import { MasterLookupData, MaintenanceRecord } from '../types';
+import MultiSelectFilter from './MultiSelectFilter';
 
 export interface FilterState {
   startDate: string;
   endDate: string;
-  month: string;
-  sector: string;
-  status: string;
-  type: string;
-  priority: string;
-  responsible: string;
-  maintSector: string;
+  months: string[];
+  sectors: string[];
+  statuses: string[];
+  types: string[];
+  priorities: string[];
+  responsibles: string[];
+  maintSectors: string[];
   search: string;
 }
 
@@ -79,7 +80,14 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
     });
   }, [records]);
 
-  const handleSelectChange = (name: keyof FilterState, value: string) => {
+  const handleTextChange = (name: keyof FilterState, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleArrayChange = (name: keyof FilterState, value: string[]) => {
     setFilters(prev => ({
       ...prev,
       [name]: value
@@ -90,25 +98,42 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
     setFilters({
       startDate: '',
       endDate: '',
-      month: '',
-      sector: '',
-      status: '',
-      type: '',
-      priority: '',
-      responsible: '',
-      maintSector: '',
+      months: [],
+      sectors: [],
+      statuses: [],
+      types: [],
+      priorities: [],
+      responsibles: [],
+      maintSectors: [],
       search: ''
     });
   };
 
+  const activeFiltersCount = 
+    (filters.startDate ? 1 : 0) +
+    (filters.endDate ? 1 : 0) +
+    filters.months.length +
+    filters.sectors.length +
+    filters.statuses.length +
+    filters.types.length +
+    filters.priorities.length +
+    filters.responsibles.length +
+    filters.maintSectors.length +
+    (filters.search ? 1 : 0);
+
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-2xl p-5 shadow-sm space-y-4">
       
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3 mb-4">
         <div className="flex items-center gap-2 text-slate-800 dark:text-white font-bold text-sm uppercase tracking-wider">
           <Filter className="w-4 h-4 text-blue-500" />
-          Filtros de Pesquisa
+          <span>Filtros de Pesquisa</span>
+          {activeFiltersCount > 0 && (
+            <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40">
+              {activeFiltersCount} ativos
+            </span>
+          )}
         </div>
         <button 
           onClick={handleReset}
@@ -131,7 +156,7 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
               type="text"
               placeholder="Digite termos para busca..."
               value={filters.search}
-              onChange={(e) => handleSelectChange('search', e.target.value)}
+              onChange={(e) => handleTextChange('search', e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2.5 outline-none transition-all placeholder:text-slate-400"
             />
           </div>
@@ -145,7 +170,7 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
             <input 
               type="date" 
               value={filters.startDate}
-              onChange={(e) => handleSelectChange('startDate', e.target.value)}
+              onChange={(e) => handleTextChange('startDate', e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition-all"
             />
           </div>
@@ -159,115 +184,75 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
             <input 
               type="date" 
               value={filters.endDate}
-              onChange={(e) => handleSelectChange('endDate', e.target.value)}
+              onChange={(e) => handleTextChange('endDate', e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition-all"
             />
           </div>
         </div>
 
-        {/* Month Filter */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mês de Referência</label>
-          <select
-            value={filters.month}
-            onChange={(e) => handleSelectChange('month', e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Todos os Meses</option>
-            {months.map(m => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-        </div>
+        {/* Multi-select: Month */}
+        <MultiSelectFilter
+          label="Mês de Referência"
+          allLabel="Todos os Meses"
+          options={months}
+          selected={filters.months}
+          onChange={(vals) => handleArrayChange('months', vals)}
+        />
 
-        {/* Sector Filter */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Setor Requisitante</label>
-          <select
-            value={filters.sector}
-            onChange={(e) => handleSelectChange('sector', e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Todos os Setores</option>
-            {sectors.map(sec => (
-              <option key={sec} value={sec}>{sec}</option>
-            ))}
-          </select>
-        </div>
+        {/* Multi-select: Sector */}
+        <MultiSelectFilter
+          label="Setor Requisitante"
+          allLabel="Todos os Setores"
+          options={sectors}
+          selected={filters.sectors}
+          onChange={(vals) => handleArrayChange('sectors', vals)}
+        />
 
-        {/* Status Filter */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Atividade</label>
-          <select
-            value={filters.status}
-            onChange={(e) => handleSelectChange('status', e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Todos os Status</option>
-            {statuses.map(st => (
-              <option key={st} value={st}>{st}</option>
-            ))}
-          </select>
-        </div>
+        {/* Multi-select: Status */}
+        <MultiSelectFilter
+          label="Status Atividade"
+          allLabel="Todos os Status"
+          options={statuses}
+          selected={filters.statuses}
+          onChange={(vals) => handleArrayChange('statuses', vals)}
+        />
 
-        {/* Maintenance Type Filter */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tipo Manutenção</label>
-          <select
-            value={filters.type}
-            onChange={(e) => handleSelectChange('type', e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Todos os Tipos</option>
-            {types.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
+        {/* Multi-select: Type */}
+        <MultiSelectFilter
+          label="Tipo Manutenção"
+          allLabel="Todos os Tipos"
+          options={types}
+          selected={filters.types}
+          onChange={(vals) => handleArrayChange('types', vals)}
+        />
 
-        {/* Priority Filter */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prioridade</label>
-          <select
-            value={filters.priority}
-            onChange={(e) => handleSelectChange('priority', e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Todas as Prioridades</option>
-            {priorities.map(p => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-        </div>
+        {/* Multi-select: Priority */}
+        <MultiSelectFilter
+          label="Prioridade"
+          allLabel="Todas as Prioridades"
+          options={priorities}
+          selected={filters.priorities}
+          onChange={(vals) => handleArrayChange('priorities', vals)}
+        />
 
-        {/* Responsible Filter */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Responsável Técnico</label>
-          <select
-            value={filters.responsible}
-            onChange={(e) => handleSelectChange('responsible', e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Todos os Técnicos</option>
-            {responsibles.map(resp => (
-              <option key={resp} value={resp}>{resp}</option>
-            ))}
-          </select>
-        </div>
+        {/* Multi-select: Responsible */}
+        <MultiSelectFilter
+          label="Responsável Técnico"
+          allLabel="Todos os Técnicos"
+          options={responsibles}
+          selected={filters.responsibles}
+          onChange={(vals) => handleArrayChange('responsibles', vals)}
+        />
 
-        {/* Maintenance Sector Filter */}
-        <div className="flex flex-col gap-1.5 sm:col-span-2 md:col-span-1">
-          <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Setor da Manutenção (Área)</label>
-          <select
-            value={filters.maintSector}
-            onChange={(e) => handleSelectChange('maintSector', e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Todas as Áreas Técnicas</option>
-            {maintSectors.map(ms => (
-              <option key={ms} value={ms}>{ms}</option>
-            ))}
-          </select>
+        {/* Multi-select: Maintenance Technical Area */}
+        <div className="sm:col-span-2 md:col-span-1">
+          <MultiSelectFilter
+            label="Setor da Manutenção (Área)"
+            allLabel="Todas as Áreas Técnicas"
+            options={maintSectors}
+            selected={filters.maintSectors}
+            onChange={(vals) => handleArrayChange('maintSectors', vals)}
+          />
         </div>
 
       </div>

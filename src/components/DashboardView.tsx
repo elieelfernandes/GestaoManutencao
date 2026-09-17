@@ -26,13 +26,13 @@ export default function DashboardView() {
   const [filters, setFilters] = useState<FilterState>({
     startDate: '',
     endDate: '',
-    month: '',
-    sector: '',
-    status: '',
-    type: '',
-    priority: '',
-    responsible: '',
-    maintSector: '',
+    months: [],
+    sectors: [],
+    statuses: [],
+    types: [],
+    priorities: [],
+    responsibles: [],
+    maintSectors: [],
     search: ''
   });
 
@@ -89,28 +89,28 @@ export default function DashboardView() {
       }
 
       // Month filter
-      if (filters.month) {
+      if (filters.months && filters.months.length > 0) {
         const recordMonth = r.mesStr || getMonthStr(r.dataSolicitacaoStr);
-        if (recordMonth !== filters.month) return false;
+        if (!filters.months.includes(recordMonth)) return false;
       }
       
       // 3. Sector filter
-      if (filters.sector && r.setor !== filters.sector) return false;
+      if (filters.sectors && filters.sectors.length > 0 && !filters.sectors.includes(r.setor)) return false;
       
       // 4. Status filter
-      if (filters.status && r.status !== filters.status) return false;
+      if (filters.statuses && filters.statuses.length > 0 && !filters.statuses.includes(r.status)) return false;
       
       // 5. Maintenance Type filter
-      if (filters.type && r.tipoManutencao !== filters.type) return false;
+      if (filters.types && filters.types.length > 0 && !filters.types.includes(r.tipoManutencao)) return false;
       
       // 6. Priority filter
-      if (filters.priority && r.prioridade !== filters.priority) return false;
+      if (filters.priorities && filters.priorities.length > 0 && !filters.priorities.includes(r.prioridade)) return false;
       
       // 7. Responsible filter
-      if (filters.responsible && r.responsavel !== filters.responsible) return false;
+      if (filters.responsibles && filters.responsibles.length > 0 && !filters.responsibles.includes(r.responsavel)) return false;
       
       // 8. Maintenance Sector filter
-      if (filters.maintSector && r.areaTecnica !== filters.maintSector) return false;
+      if (filters.maintSectors && filters.maintSectors.length > 0 && !filters.maintSectors.includes(r.areaTecnica)) return false;
       
       // 9. Global Text Search
       if (filters.search) {

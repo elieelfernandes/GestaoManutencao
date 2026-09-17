@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ClipboardList, Plus, RefreshCw, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { MaintenanceRecord, MasterLookupData } from '../types';
-import FilterPanel, { FilterState } from './FilterPanel';
+import FilterPanel, { FilterState, getMonthStr } from './FilterPanel';
 import AnalyticalTable from './AnalyticalTable';
 import CreateOSModal from './CreateOSModal';
 import EditOSModal from './EditOSModal';
@@ -36,13 +36,13 @@ export default function OrdensView() {
   const [filters, setFilters] = useState<FilterState>({
     startDate: '',
     endDate: '',
-    month: '',
-    sector: '',
-    status: '',
-    type: '',
-    priority: '',
-    responsible: '',
-    maintSector: '',
+    months: [],
+    sectors: [],
+    statuses: [],
+    types: [],
+    priorities: [],
+    responsibles: [],
+    maintSectors: [],
     search: ''
   });
 
@@ -103,18 +103,23 @@ export default function OrdensView() {
       if (filters.endDate && r.dataSolicitacaoStr) {
         if (r.dataSolicitacaoStr > filters.endDate) return false;
       }
-      if (filters.sector && r.setor !== filters.sector) return false;
-      if (filters.status && r.status !== filters.status) return false;
-      if (filters.type && r.tipoManutencao !== filters.type) return false;
-      if (filters.priority && r.prioridade !== filters.priority) return false;
-      if (filters.responsible && r.responsavel !== filters.responsible) return false;
-      if (filters.maintSector && r.areaTecnica !== filters.maintSector) return false;
+      if (filters.months && filters.months.length > 0) {
+        const recordMonth = r.mesStr || getMonthStr(r.dataSolicitacaoStr);
+        if (!filters.months.includes(recordMonth)) return false;
+      }
+      if (filters.sectors && filters.sectors.length > 0 && !filters.sectors.includes(r.setor)) return false;
+      if (filters.statuses && filters.statuses.length > 0 && !filters.statuses.includes(r.status)) return false;
+      if (filters.types && filters.types.length > 0 && !filters.types.includes(r.tipoManutencao)) return false;
+      if (filters.priorities && filters.priorities.length > 0 && !filters.priorities.includes(r.prioridade)) return false;
+      if (filters.responsibles && filters.responsibles.length > 0 && !filters.responsibles.includes(r.responsavel)) return false;
+      if (filters.maintSectors && filters.maintSectors.length > 0 && !filters.maintSectors.includes(r.areaTecnica)) return false;
       if (filters.search) {
         const q = filters.search.toLowerCase().trim();
         const descMatch = r.descricao ? r.descricao.toLowerCase().includes(q) : false;
         const secMatch = r.setor ? r.setor.toLowerCase().includes(q) : false;
         const respMatch = r.responsavel ? r.responsavel.toLowerCase().includes(q) : false;
-        if (!descMatch && !secMatch && !respMatch) return false;
+        const typeMatch = r.tipoManutencao ? r.tipoManutencao.toLowerCase().includes(q) : false;
+        if (!descMatch && !secMatch && !respMatch && !typeMatch) return false;
       }
       return true;
     });
