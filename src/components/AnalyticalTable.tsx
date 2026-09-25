@@ -37,7 +37,15 @@ const columnHelper = createColumnHelper<MaintenanceRecord>();
 
 export default function AnalyticalTable({ records, onEditOS, onDeleteOS, onViewAudit }: AnalyticalTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [searchInput, setSearchInput] = useState('');
   const [globalSearch, setGlobalSearch] = useState('');
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setGlobalSearch(searchInput);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const columns = React.useMemo(() => {
     const baseColumns: any[] = [
@@ -257,8 +265,8 @@ export default function AnalyticalTable({ records, onEditOS, onDeleteOS, onViewA
             <input 
               type="text"
               placeholder="Filtrar tabela..."
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2 outline-none transition-all placeholder:text-slate-400 sm:w-48 lg:w-64"
             />
           </div>
