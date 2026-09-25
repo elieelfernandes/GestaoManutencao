@@ -80,6 +80,21 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
     });
   }, [records]);
 
+  const [localSearch, setLocalSearch] = React.useState(filters.search);
+
+  React.useEffect(() => {
+    setLocalSearch(filters.search);
+  }, [filters.search]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== filters.search) {
+        setFilters(prev => ({ ...prev, search: localSearch }));
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [localSearch, filters.search, setFilters]);
+
   const handleTextChange = (name: keyof FilterState, value: string) => {
     setFilters(prev => ({
       ...prev,
@@ -95,6 +110,7 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
   };
 
   const handleReset = () => {
+    setLocalSearch('');
     setFilters({
       startDate: '',
       endDate: '',
@@ -155,8 +171,8 @@ export default function FilterPanel({ filters, setFilters, lookups, records }: F
             <input 
               type="text"
               placeholder="Digite termos para busca..."
-              value={filters.search}
-              onChange={(e) => handleTextChange('search', e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-850 focus:border-blue-500 text-slate-800 dark:text-slate-200 text-xs rounded-xl pl-9 pr-3 py-2.5 outline-none transition-all placeholder:text-slate-400"
             />
           </div>
